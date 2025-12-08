@@ -1,6 +1,8 @@
 local M = {}
 
-M.on_save = function()
+--- Back up all breakpoints.
+---@return {breakpoints: any[]}? save_data #
+function M.on_save()
   if not package.loaded["dap"] then
     return nil
   end
@@ -18,22 +20,22 @@ M.on_save = function()
   }
 end
 
-M.on_post_load = function(data)
+--- Restore backed up breakpoints.
+---@param data {breakpoints: any[]} Save data from `on_save`
+function M.on_post_load(data)
   local dap = require("dap")
   local cur_bufnr = vim.api.nvim_get_current_buf()
   local view = vim.fn.winsaveview()
 
-  if data.breakpoints then
-    for _, bp in ipairs(data.breakpoints) do
-      local bufnr = vim.fn.bufadd(bp.filename)
-      if not vim.api.nvim_buf_is_loaded(bufnr) then
-        vim.fn.bufload(bufnr)
-      end
-      vim.api.nvim_win_set_buf(0, bufnr)
-      local set_cursor = pcall(vim.api.nvim_win_set_cursor, 0, { bp.line, 0 })
-      if set_cursor then
-        dap.set_breakpoint(bp.condition, bp.hit_condition, bp.log_message)
-      end
+  for _, bp in ipairs(data.breakpoints or {}) do
+    local bufnr = vim.fn.bufadd(bp.filename)
+    if not vim.api.nvim_buf_is_loaded(bufnr) then
+      vim.fn.bufload(bufnr)
+    end
+    vim.api.nvim_win_set_buf(0, bufnr)
+    local set_cursor = pcall(vim.api.nvim_win_set_cursor, 0, { bp.line, 0 })
+    if set_cursor then
+      dap.set_breakpoint(bp.condition, bp.hit_condition, bp.log_message)
     end
   end
 

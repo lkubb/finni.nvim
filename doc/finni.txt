@@ -1566,6 +1566,10 @@ quickfix           Persist all quickfix lists, currently active list,
 
 colorscheme        Persist color scheme.
 
+dap                Persist nvim-dap
+                   <https://github.com/mfussenegger/nvim-dap>
+                   breakpoints
+
 neogit             Persist neogit <https://github.com/NeogitOrg/neogit>
                    status and commit views.
 
