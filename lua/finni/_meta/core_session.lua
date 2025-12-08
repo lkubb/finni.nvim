@@ -194,7 +194,9 @@ function Session:restore(opts, snapshot) end
 --- Check whether this session is attached correctly.
 --- Note: It must be the same instance that `:attach()` was called on, not a copy.
 ---@return TypeGuard<ActiveSession<T>>
-function Session:is_attached() end -- I couldn't make TypeGuard<ActiveSession<T>> work properly with method syntax
+function Session:is_attached() end
+
+-- I couldn't make TypeGuard<ActiveSession<T>> work properly with method syntax
 
 --- Turn the session object into opts for snapshot restore/save operations
 ---@return Session.Init.Paths & Session.Init.Autosave & Session.Init.Meta & snapshot.CreateOpts
@@ -237,8 +239,8 @@ function IdleSession:attach() end
 --- Save this session following its configured configuration.
 --- Note: Any save configuration must be applied via `Session.update(opts)` before
 --- callig this method since all session-specific options that might be contained
---- in `opts` are overridded with ones configured for the session.
----@param opts? Session.AutosaveOpts & Session.KnownHookOpts & PassthroughOpts #
+--- in `opts` are overridden with ones configured for the session.
+---@param opts? finni.SideEffects.Notify & Session.KnownHookOpts & PassthroughOpts #
 ---   Success notification setting plus options that need to be passed through to pre_save/post_save hooks.
 ---@return boolean success #
 function IdleSession:save(opts) end
@@ -260,7 +262,7 @@ function IdleSession:save(opts) end
 ---@field private _setup_autosave fun(self: ActiveSession<T>): nil
 local ActiveSession = {}
 
----@param opts? Session.AutosaveOpts & PassthroughOpts #
+---@param opts? finni.SideEffects.Notify & PassthroughOpts #
 ---@param force? boolean #
 ---   Force snapshot to be saved, regardless of autosave config
 function ActiveSession:autosave(opts, force) end

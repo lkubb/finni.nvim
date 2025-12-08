@@ -73,6 +73,28 @@
 --- There's no case where it enables monitoring without immediately loading an autosession.
 ---@alias InitHandler fun(ctx: {is_headless: boolean, is_pager: boolean}): (string|false)?
 
+-- The following aliases were created to ensure the UserConfig docs
+-- render correctly (function field docstrings are omitted).
+
+--- Function that derives autosession configuration from a path.
+--- The default implementation calls into all other autosession hooks
+--- that can be overridden in the config.
+---@alias SpecHook fun(cwd: string): auto.AutosessionSpec?
+--- Function that derives workspace root and git-tracked status from a path.
+---@alias WorkspaceHook fun(cwd: string): [string, boolean]
+--- Function that derives the project name from output of WorkspaceHook.
+---@alias ProjectNameHook fun(workspace: string, git_info: auto.AutosessionSpec.GitInfo?): string
+--- Function that derives the session name from output of WorkspaceHook and ProjectNameHook.
+---@alias SessionNameHook fun(meta: {cwd: string, workspace: string, project_name: string, git_info: auto.AutosessionSpec.GitInfo?}): string
+--- Function that decides whether an autosession should be processed further.
+--- Receives output of WorkspaceHook, ProjectNameHook and SessionNameHook.
+---@alias EnabledHook fun(meta: {cwd: string, workspace: string, project_name: string, session_name: string}): boolean
+--- Function that can return autosession-specific load option overrides.
+--- Receives output of WorkspaceHook, ProjectNameHook and SessionNameHook.
+---@alias LoadOptsHook fun(meta: {cwd: string, workspace: string, project_name: string, session_name: string}): auto.LoadOpts?
+
+--- Specifies which project an autosession belongs to, its workspace root directory and name
+--- as well as configuration overrides specific to this autosession.
 ---@class AutosessionSpec
 ---@field project AutosessionSpec.ProjectInfo Information about the project the session belongs to
 ---@field root string #
@@ -81,6 +103,10 @@
 ---@field name string The name of the session
 ---@field config LoadOpts Session-specific load/autosave options.
 
+--- Specifies the project an autosession belongs to.
+--- Projects are identified by their name.
+--- Since projects are often associated with a Git repository and we need a place to
+--- pass around the queried information to avoid refetching it, it's also included in here.
 ---@class AutosessionSpec.ProjectInfo
 ---@field data_dir? string #
 ---   The path of the directory that is used to save autosession data related to this project.
@@ -89,6 +115,7 @@
 ---@field name string The name of the project
 ---@field repo AutosessionSpec.GitInfo? When the project is defined as a git repository, meta info
 
+--- Information about a Git repository that is associated with a project.
 ---@class AutosessionSpec.GitInfo
 ---@field commongitdir string #
 ---   The common git dir, usually equal to gitdir, unless the worktree is not the default workdir
@@ -99,9 +126,13 @@
 ---@field branch? string The branch the worktree has checked out
 ---@field default_branch? string The name of the default branch
 
+-- Don't remove the `project` definition below, for some reason, EmmyLua thinks it's
+-- optional when removed here.
+
 ---@class AutosessionContext: AutosessionSpec
 ---@field cwd string #
 ---   The effective working directory that was determined when loading this auto-session
+---@field project AutosessionConfig.ProjectInfo
 
 ---@class AutosessionConfig.ProjectInfo: AutosessionSpec.ProjectInfo
 ---@field data_dir string #
@@ -109,5 +140,5 @@
 
 ---@class ActiveAutosessionInfo: ActiveSessionInfo
 ---@field is_autosession boolean Whether this is an autosession or a manual one
----@field autosession_config? AutosessionContext WHen this is an autosession, the internal configuration that was rendered.
+---@field autosession_config? AutosessionContext When this is an autosession, the internal configuration that was rendered.
 ---@field autosession_data? Snapshot The most recent snapshotted state of this named autosession

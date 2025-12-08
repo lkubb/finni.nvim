@@ -3,46 +3,78 @@ local M = {}
 
 ---@namespace finni
 
+-- The following aliases are only there to include the field descriptions in the config docs.
+
+--- Function that decides whether a buffer should be included in a snapshot.
+---@alias BufFilter fun(bufnr: integer, opts: core.snapshot.CreateOpts): boolean
+
+--- Function that decides whether a buffer should be included in a tab-scoped snapshot.
+--- BufFilter is called first, this is to refine acceptable buffers only.
+---@alias TabBufFilter fun(tabpage: integer, bufnr: integer, opts: core.snapshot.CreateOpts): boolean
+
 -- This is the user config, which can be a partial one.
 
 --- User configuration for this plugin.
 ---@class UserConfig
 ---@field autosession? UserConfig.autosession #
----   Influence autosession behavior and contents
+---   Influence autosession behavior and contents.
+---   Specify defaults that apply to all autosessions.
+---   By overriding specific hooks, you can minutely customize almost any aspect
+---   of when an autosession is triggered, how it's handled and what is persisted in it.
 ---@field extensions? table<string,any> #
 ---   Configuration for extensions, both Resession ones and those specific to Finni.
 ---   Note: Finni first tries to load specified extensions in `finni.extensions`,
 ---   but falls back to `resession.extension` with a warning. Avoid this overhead
----   by specifying `resession_compat = true` in the extension config.
+---   for Resession extensions by specifying `resession_compat = true` in the extension config.
 ---@field load? UserConfig.load #
----   Configure session list information detail and sort order
+---   Configure session list information detail and sort order.
 ---@field log? UserConfig.log #
----   Configure plugin logging
+---   Configure plugin logging.
 ---@field session? UserConfig.session #
----   Influence session behavior and contents
+---   Configure default session behavior and contents, affects both manual and autosessions.
+---   Note: In the following field descriptions, "this session" refers to all sessions
+---         that don't override these defaults.
 
 --- Configure autosession behavior and contents
 ---@class UserConfig.autosession
 ---@field config? core.Session.InitOpts #
----   Save/load configuration for autosessions
+---   Save/load configuration for autosessions.
+---   Definitions in here override the defaults in `session`.
 ---@field dir? string #
 ---   Name of the directory to store autosession projects in.
 ---   Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
----@field spec? fun(cwd: string): auto.AutosessionSpec? #
----   This function implements the logic that derives the autosession spec from a path.
----   It calls `workspace`, `project_name`, `session_name`, `enabled` and `load_opts` to render it.
----   You can implement a custom logic here, but mind that the other functions have no effect then.
----@field workspace? fun(cwd: string): [string, boolean] #
----   Receive the effective nvim cwd, return workspace root and whether it's a git-tracked dir
----@field project_name? fun(workspace: string, git_info: auto.AutosessionSpec.GitInfo?): string #
----   Receive the workspace root dir and whether it's git-tracked and returns the project-specific session directory name.
----@field session_name? fun(meta: {cwd: string, workspace: string, project_name: string, git_info: auto.AutosessionSpec.GitInfo?}): string #
----   Receive the effective nvim cwd, the workspace root, the project name and cwd git info and generate a session name.
----@field enabled? fun(meta: {cwd: string, workspace: string, project_name: string, session_name: string}): boolean #
+---   Defaults to `finni`.
+---@field spec? auto.SpecHook #
+---   This function implements the logic that derives the autosession spec from a path,
+---   usually the current working directory. If it returns an autosession spec, Finni
+---   automatically switches to the session's workspace root and tries to restore an
+---   existing matching session (matched by project name + session name).
+---   If it returns nothing, it's interpreted as "no autosession should be active".
+---
+---   It is called during various points in Finni's lifecycle:
+---   1. Neovim startup (if startup autosessions are enabled)
+---   2. When Neovim changes its global working directory
+---   3. When a git branch is switched (if you have installed gitsigns.nvim)
+---
+---   If the return value does not match the current state, the currently active
+---   session (if any) is saved + closed and the new session (if any) restored.
+---
+---   The default implementation calls `workspace`, `project_name`, `session_name`,
+---   `enabled` and `load_opts` to piece together the specification.
+---   By overriding this config field, you can implement a custom logic.
+---   Mind that the other hooks have no effect then (unless you call them manually).
+---@field workspace? auto.WorkspaceHook #
+---   Receive the effective nvim cwd, return workspace root and whether it is git-tracked.
+---@field project_name? auto.ProjectNameHook #
+---   Receive the workspace root dir and whether it's git-tracked, return the project-specific session directory name.
+---@field session_name? auto.SessionNameHook #
+---   Receive the effective nvim cwd, the workspace root, the project name and workspace repo git info and generate a session name.
+---@field enabled? auto.EnabledHook #
 ---   Receive the effective nvim cwd, the workspace root and project name and decide
----   whether a session should be started automatically.
----@field load_opts? fun(meta: {cwd: string, workspace: string, project_name: string, session_name: string}): auto.LoadOpts? #
+---   whether an autosession with this configuration should be active.
+---@field load_opts? auto.LoadOptsHook #
 ---   Influence how an autosession is loaded/persisted, e.g. load the session without attaching it or disable modified persistence.
+---   Merged on top of the default autosession configuration for this specific autosession only.
 
 --- Configure session list information detail and sort order
 ---@class UserConfig.load

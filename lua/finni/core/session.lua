@@ -680,7 +680,7 @@ function M.get_active()
   return name and assert(sessions[name], "Current session not known, this is likely a bug") or nil
 end
 
----@param opts? Session.AutosaveOpts & PassthroughOpts
+---@param opts? finni.SideEffects.Notify & PassthroughOpts
 ---@param is_autosave boolean
 local function save_all(opts, is_autosave)
   -- Difference to Resession:
@@ -698,13 +698,13 @@ end
 
 --- Trigger an autosave for all attached sessions, respecting session-specific
 --- `autosave_enabled` configuration. Mostly for internal use.
----@param opts? Session.AutosaveOpts & PassthroughOpts
+---@param opts? finni.SideEffects.Notify & PassthroughOpts
 function M.autosave(opts)
   save_all(opts, true)
 end
 
 --- Save all currently attached sessions to disk
----@param opts? Session.AutosaveOpts & PassthroughOpts
+---@param opts? finni.SideEffects.Notify & PassthroughOpts
 function M.save_all(opts)
   save_all(opts, false)
 end

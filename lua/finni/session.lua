@@ -166,6 +166,7 @@ function M.save_tab(name, opts)
   save(name, opts, vim.api.nvim_get_current_tabpage())
 end
 
+--- Save all currently attached sessions to disk
 M.save_all = Session.save_all
 
 --- Prompt user for name of session to load from session dir
@@ -207,18 +208,14 @@ local function get_load_name(opts)
   return name
 end
 
---- Load a session from disk
+--- Load a session from disk.
+---
+--- Note: The default value of `opts.reset = "auto"` resets when loading a normal session,
+--- but _not_ when loading a tab-scoped session.
 ---@param name? string #
 ---   Name of the session to load from session dir.
 ---   If not provided, prompts user.
 ---@param opts? LoadOpts & PassthroughOpts #
----   attach? boolean Stay attached to session after loading (default true)
----   reset? boolean|"auto" Close everything before loading the session (default "auto")
----   silence_errors? boolean Don't error when trying to load a missing session
----   dir? string Name of directory to load from (overrides config.dir)
----@note
---- The default value of `reset = "auto"` will reset when loading a normal session, but _not_ when
---- loading a tab-scoped session.
 function M.load(name, opts)
   ---@type LoadOpts & PassthroughOpts
   opts = opts or {}
@@ -274,12 +271,11 @@ function M.load(name, opts)
   end
 end
 
--- M.get_current = Manager.get_current
--- M.get_current_data = Manager.get_current_data
+--- Detach from the session that contains the target (or all active sessions if unspecified).
 M.detach = Session.detach
 
 --- List all available saved sessions in session dir
----@param opts? ListOpts
+---@param opts? DirParam
 ---@return string[] sessions_in_dir #
 function M.list(opts)
   ---@type ListOpts

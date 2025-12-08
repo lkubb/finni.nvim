@@ -1,11 +1,11 @@
-*finni.txt*                              Sublime project-focused autosessions.
+{{ "*finni.txt*" | cols("Sublime project-focused autosessions.") }}
 
-███████╗██╗███╗   ██╗███╗   ██╗██╗   ███╗   ██╗██╗   ██╗██╗███╗   ███╗
-██╔════╝██║████╗  ██║████╗  ██║██║   ████╗  ██║██║   ██║██║████╗ ████║
-█████╗  ██║██╔██╗ ██║██╔██╗ ██║██║   ██╔██╗ ██║██║   ██║██║██╔████╔██║
-██╔══╝  ██║██║╚██╗██║██║╚██╗██║██║   ██║╚██╗██║╚██╗ ██╔╝██║██║╚██╔╝██║
-██║     ██║██║ ╚████║██║ ╚████║██║██╗██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║
-╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝
+    ███████╗██╗███╗   ██╗███╗   ██╗██╗   ███╗   ██╗██╗   ██╗██╗███╗   ███╗
+    ██╔════╝██║████╗  ██║████╗  ██║██║   ████╗  ██║██║   ██║██║████╗ ████║
+    █████╗  ██║██╔██╗ ██║██╔██╗ ██║██║   ██╔██╗ ██║██║   ██║██║██╔████╔██║
+    ██╔══╝  ██║██║╚██╗██║██║╚██╗██║██║   ██║╚██╗██║╚██╗ ██╔╝██║██║╚██╔╝██║
+    ██║     ██║██║ ╚████║██║ ╚████║██║██╗██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║
+    ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝
 
 
 {%- anchor "finni" with literal=true %}
@@ -19,85 +19,276 @@ unbound by the limits of `:mksession`.
 
 {{ toc }}
 
-{%- section "Features" with markdown=true %}
-* Sessions that persist
-  - tabs
-  - window layout
-  - buffers
-  - cursor positions in all windows/buffers
-  - buffer/window/tab/global options
-  - unwritten buffer modifications and undo histories, including for unnamed buffers (similar to Sublime Text)
-  - jumplists and current position for each window separately
-  - changelists and current position for all buffers
-  - loclists for all windows, including currently selected one + current position + loclist windows
-  - quickfix lists, including currently selected one + current position + quickfix window
-  - buffer-local and global marks
-  - cmd/search/input/expr/debug histories (separately from ShaDa, per session/project)
-* Context-specific autosessions
-* Tab-scoped sessions (manual)
-* Easy to write custom extensions
-* Highly configurable
+{%- section "✨ Features" with markdown=true %}
+- **Comprehensive snapshots** of the current Neovim state:
+  - Preserve your entire workspace: tabs, window layout, open buffers, cursor positions, and relevant buffer/window/global options.
+  - Preserve **unsaved changes** and corresponding **undo history**, including for unnamed buffers.
+  - Preserve navigation state: **jumplists** (each window separately, unlike ShaDa), **changelists**, **loclists**, **quickfix** lists, including your current position in each, and buffer-local/global **marks**.
+  - Snapshot restoration is compatible with `lazy.nvim` `VeryLazy`-loaded plugins.
+- **Automatic session management** (opt-in):
+  - Automatically create, save, and restore snapshots per directory, Git repository and branch.
+  - Autoswitch sessions when changing branches (`git switch`) or directories (`:cd`).
+- **Separate Neovim scopes**, by default: directory or Git repository/branch. This prevents[^1]
+  - mangling of unrelated command/search/input/expr/debug histories.
+  - going back the jumplist (`CTRL-o`) and ending up in a seemingly random file.
+- **Highly customizable**:
+  - Override, filter, or extend what gets saved or restored — globally, per project, or per session.
+  - Add **custom extensions** to restore state from other plugins.
+  - React to events with **custom hooks**.
+  - **Define scopes** in code however you like: directory basename, weekday, `head -c 1 /dev/random` (y tho?), ...
+  - E.g., it's possible to (ab)use autosession loading logic to start into predefined layouts, depending on the directory you execute Neovim in.
+- [Lua API](#finni.session) for `'nomagic'` **manual session management**, including tab-scoped sessions
+  - This API is mostly backwards-compatible with [`resession.nvim`](https://github.com/stevearc/resession.nvim).\
+    (Finni started by forking it, a heartfelt thank you @stevearc for laying the arduous ground work! <3)
+  - For the brave, an even more low-level session and snapshot API (`finni.core.session`, `finni.core.snapshot`)
+    is available.
+
+[^1]: similar to scope-specific ShaDa via `'shadafile'`
 {%- endsection %}
 
-{%- section "Dependencies" with markdown=true %}
+
+{%- section "⛓️ Dependencies" with markdown=true %}
 * Neovim 0.10+
-* [`lewis6991/gitsigns.nvim`](https://github.com/lewis6991/gitsigns.nvim/)  (optional) for autoswitch on branch change
+* [`lewis6991/gitsigns.nvim`](https://github.com/lewis6991/gitsigns.nvim/) (optional) for branch monitoring
 {%- endsection %}
 
-{%- section "Setup" %}
-{%-   section "Built-in plugin manager" with anchor="nvim-pack" markdown=true %}
+
+{%- section "📦 Setup" %}
+{%-   para with markdown=true %}
+A general description follows. For specific plugin managers, see below.
+
+1. Add this plugin to your `'runtimepath'`.
+1. (optional) Override the [configuration defaults](#finni-configuration-defaults) by assigning [a configuration table](#finni.UserConfig) to `g:finni_config`.
+1. (optional) Enable startup autosessions by setting `g:finni_autosession` to `true`.
+1. (optional) Define [keymaps](#finni-usage-keymaps).
+
+You don't need to call `setup()`.
+You don't need to handle lazy-loading yourself.
+Finni is always there for you when you need him.
+{%-   endpara %}
+
+{%-   section "`vim.pack`" with markdown=true collapse=true %}
 ```lua
 vim.pack.add("https://github.com/lkubb/finni.nvim")
 vim.g.finni_autosession = true -- optionally enable startup autosessions
 vim.g.finni_config = { --[[ custom options/overrides ]] }
 ```
 {%-   endsection %}
-{%-   section "lazy.nvim" %}
-{%-     section "Generally" with markdown=true %}
+
+{%-   section "`lazy.nvim`" with markdown=true collapse=true %}
 ```lua
 {
-  'lkubb/finni.nvim',
+  "lkubb/finni.nvim",
   -- This plugin only ever loads as much as needed.
   -- You don't need to manage lazyloading manually.
+  -- Initialization is only triggered if you enable startup autosessions
+  -- and an autosession is defined for the current environment
+  -- or once you invoke the Finni Lua API/Ex command.
   lazy = false,
-  opts = {
-    -- Custom options/overrides.
-    -- Note: This ends up in `vim.g.finni_config` (via `finni.setup()`).
-    --       Initialization is only triggered if you enable autosession-on-load
-    --       and an autosession is defined for the current environment
-    --       or once you invoke the Finni Lua API/Ex command.
-  },
-}
-```
-{%-     endsection %}
-
-{%-     section "Autosession on startup" with markdown=true %}
-If you want to trigger autosession mode when Neovim starts, you need to set `g:finni_autosession` **early**:
-```lua
-{
-  'lkubb/finni.nvim',
+  -- If you don't want to enable startup autosessions, you can use
+  --  `opts` for custom configuration (or omit it if you want to use defaults).
   init = function()
-    vim.g.finni_autosession = true
+    vim.g.finni_autosession = true -- optionally enable startup autosessions
     vim.g.finni_config = { --[[ custom options/overrides ]] }
   end,
 }
 ```
-{%-     endsection %}
+{%-   endsection %}
+
+{%-   section "`mini.deps`" with markdown=true collapse=true %}
+```lua
+MiniDeps.add({
+  source = "lkubb/finni.nvim",
+  checkout = "main",
+})
+vim.g.finni_autosession = true -- optionally enable startup autosessions
+vim.g.finni_config = { --[[ custom options/overrides ]] }
+```
 {%-   endsection %}
 {%- endsection %}
 
-{%- section "Configuration" %}
-{%-   section "Defaults" %}
 
->lua
-    {{ extract_lines("lua/finni/config.lua", start="^---@type Config$", stop="^}$", skip_start=1, exclude=".*@diagnostic.*")[17:] | indent(4) }}
-<
+{%- section "🚀 Usage" %}
+{%-   para with markdown=true %}
+First, decide whether you want to follow a mostly hands-off approach with autosessions
+or prefer the more predictable route of managing your sessions manually.
+
+Especially with autosessions, try to get an intuition for its inner workings before relying on this plugin for important work.
+If you prefer reading, see the [Concepts](#finni-concepts) section below for details on this topic.
+
+In any case, make sure you give the [limitations and caveats](#finni-limitations-and-caveats) a quick read.
+
+Later, you can customize the [configuration](#finni-configuration) and check
+if you want to enable some [extensions](#finni-extensions) to restore windows of your plugins.
+{%-   endpara %}
+
+{%-   section "Keymaps" %}
+{%-     para with markdown=true %}
+Finni does not include default keymaps since different users will have very divergent needs
+and preferences. Set-and-forget startup autosession users might never need any in the first place,
+especially since the `:Finni` command exposes large parts of the Lua API for the rare case
+where they would want to intervene. The most useful command to map is `:Finni reset`, in the author's opinion.
+{%-     endpara %}
+
+{%-     para with collapse=true markdown=true summary="Still, here is an example setup that focuses on **autosessions**:" %}
+```lua
+-- Without startup autosessions, you need to enter Finni explicitly.
+-- This runs the autosession logic and sets up environment monitoring.
+vim.keymap.set("n", "<leader>Ss", "<cmd>Finni start<cr>", { desc = "[S]ession [S]tart" })
+-- Delete active autosession, reset Neovim to a clean state and attach a fresh autosession.
+vim.keymap.set("n", "<leader>SR", "<cmd>Finni reset<cr>", { desc = "[S]ession [R]eset" })
+-- Detach active session. Autosessions are still triggered by environment changes.
+vim.keymap.set("n", "<leader>Sd", "<cmd>Finni detach<cr>", { desc = "[S]ession [D]etach" })
+-- Detach active session and stop environment monitoring.
+vim.keymap.set("n", "<leader>SS", "<cmd>Finni stop<cr>", { desc = "[S]ession [S]top" })
+-- List all sessions in the current project
+vim.keymap.set("n", "<leader>Sl", "<cmd>Finni list<cr>", { desc = "[S]essions [L]ist" })
+-- Inspect the active session
+vim.keymap.set("n", "<leader>Si", "<cmd>Finni info<cr>", { desc = "[S]ession [I]nfo" })
+```
+{%-     endpara %}
+
+{%-     para with collapse=true markdown=true summary="And here is a basic one for **manual sessions**" %}
+```lua
+-- Load a session. Displays an interactive selection.
+vim.keymap.set("n", "<leader>Sl", function() require("finni.session").load() end, { desc = "[S]ession [L]oad" })
+-- Save the current state to a global snapshot.
+-- If no session is active, prompts for snapshot/session name to save as.
+vim.keymap.set("n", "<leader>Ss", function() require("finni.session").save() end, { desc = "[S]ession [S]ave" })
+-- Detach active session and reset all buffers/windows/tabs associated with it.
+vim.keymap.set("n", "<leader>Sc", function() require("finni.session").detach(nil, nil, {reset = true}) end, { desc = "[S]ession [C]lose" })
+-- Delete a session. Displays an interactive selection.
+vim.keymap.set("n", "<leader>SD", function() require("finni.session").delete() end, { desc = "[S]ession [D]elete" })
+```
+{%-     endpara %}
 {%-   endsection %}
-{{- doc.get("finni.UserConfig") }}
+
+{%-   section "Ex command" with markdown=true %}
+Finni creates an Ex command with the same name (`:Finni`). It currently exposes the [autosession API](#finni.auto) only.
+
+1. Make the first argument the name of the Lua function to execute:
+
+   ```
+   :Finni reset
+   ```
+1. Follow with positional arguments (`nil`, `false`, `true` are parsed):
+
+   ```
+   :Finni load /home/me/code/my_project
+   ```
+1. Pass `opts` table keys as keyword arguments (by name):
+
+   ```
+   :Finni detach save=false reset=true
+   ```
+1. Full example:
+   ```
+   :Finni load /home/me/code/my_project modified=false
+   ```
+{%-   endsection %}
 {%- endsection %}
 
-{%- section "Recipes" %}
-{%-   section "Tab-scoped Sessions" with markdown=true %}
+
+{%- section "👤 Concepts" %}
+{%-   anchor "project" with markdown=true -%}
+* A **project** is a container for one or more related sessions that can share some data.
+  It's only relevant for autosessions currently.
+{%-   endanchor %}
+{%-   anchor "snapshot" with markdown=true -%}
+* A **snapshot** is the save data required to restore a specific Neovim state. It consists of a JSON data file and optional related files (ShaDa, unwritten buffer contents, undo histories for unwritten buffers).
+{%-   endanchor %}
+{%-   anchor "session" with markdown=true -%}
+* A **session** is the relation between current Neovim state and an on-disk snapshot.
+{%-   endanchor %}
+{%-   anchor "autosession" with markdown=true -%}
+* An **autosession** is a session that is derived from an environment.
+  It's restored and attached automatically when triggered.
+  Mixing manual and autosession usage is *discouraged* currently. Interplay is TBD.
+{%-   endanchor %}
+{%-   anchor "global-session" with markdown=true -%}
+* A **global session** persists everything into its snapshot. Autosessions are always global sessions currently.
+{%-   endanchor %}
+{%-   anchor "tab-session" with markdown=true -%}
+* A **tab-scoped session** does not include global state.
+  It only persists windows in its associated tab.
+  By default, persisted buffers are still the same as in global sessions.
+{%-   endanchor %}
+{%-   anchor "snapshot-restore" with markdown=true -%}
+* **Restoring** a snapshot loads the saved state into the Neovim instance.
+  If it's a dirty instance, restoration can either reset Neovim's state to a clean one or merge it with the snapshot.
+  By default, restoring a global snapshot resets everything in your Neovim instance,
+  while tab snapshots are restored into a fresh tab.
+  It's possible to restore snapshots without attaching the session after.
+{%-   endanchor %}
+{%-   anchor "session-attach" with markdown=true -%}
+* **Attaching** a session means (auto)save operations overwrite the snapshot it points to, using the configuration that was derived when attaching it.
+  There can only be one attached (active) global session, but several tab sessions at a time.
+  Mixing both types is *discouraged* currently. Interplay is TBD.
+{%-   endanchor %}
+{%-   anchor "session-detach" with markdown=true -%}
+* **Detaching** a session means save operations no longer overwrite the snapshot it points to.
+  It can optionally be combined with closing associated buffers/windows/tabs (see reset below).
+{%-   endanchor %}
+{%-   anchor "session-detach-reset" with markdown=true -%}
+* A **reset** during *session detaching* implies **only session-associated** resources (those persisted to its snapshot) are closed.
+{%-   endanchor %}
+{%-   anchor "snapshot-restore-reset" with markdown=true -%}
+* A **reset** during *snapshot restoration* implies **all** Neovim resources are closed (buffers, windows, tabs).\
+  **Hint:** Loading a global session implies potentially detaching an active session, followed by snapshot restoration.
+{%-   endanchor %}
+{%-   anchor "autosave" with markdown=true -%}
+* **Autosaving** means that an attached session is saved automatically at specific points in Neovim's lifetime:
+  - before the session is detached
+  - when Neovim is closed
+  - in regular intervals
+{%-   endanchor %}
+{%- endsection %}
+
+
+{%- section "❗ Limitations and caveats" with markdown=true %}
+* Although the snapshot logic is relatively proven, many aspects of how autosessions work,
+  more "exotic" persistency types and their config have not been designed on a drafting board.
+  The sole user has been me, while at the same time developing Finni over the last year.
+  Expect surprises and some clunkiness, for now, but feel free to [create an issue](https://github.com/lkubb/finni.nvim/issues/new/choose) if that happens to you.
+  I want this plugin to be useful to many people.
+* A similar caveat applies to the interplay between different kinds of sessions, which is
+  explicitly *to be determined*. The safest bet are global sessions, but stick to either
+  manual OR automatic ones.
+* Don't rely on preservation of modified buffers for highly valuable or
+  otherwise significant work, or if you do, don't curse me when you lose it.
+  With that said, it has been quite reliable during my usage.
+{%- endsection %}
+
+
+{%- section "⚙️ Configuration" %}
+{%-   section "Defaults" with markdown=true collapse=true %}
+
+```lua
+{{ extract_lines("lua/finni/config.lua", start="^---@type Config$", stop="^}$", skip_start=1, exclude=".*@diagnostic.*")[17:] }}
+```
+{%-   endsection %}
+
+{%- anchor "finni.UserConfig" with literal=true %}{%- endanchor %}
+{%- for fname, field in doc.get("finni.UserConfig").fields | dictsort %}
+{%-   section "`{}`".format(fname) %}
+    Type: ~
+      {{ field.typ | humanize }}
+{%-     if field.desc %}
+
+    {{ field.desc | trim | vimdoc(indent=4) | trim }}
+{%-     endif %}
+{%-     if field.fields %}
+{%       section "Table fields" with collapse=true anchor=false toc=false indent=4 %}
+{{- field.fields.values() | list }}
+{%-       endsection %}
+{%-     endif %}
+{%-   endsection %}
+{%- endfor %}
+{%- endsection %}
+
+
+{%- section "📒 Recipes" %}
+{%-   section "Tab-scoped Sessions" with markdown=true collapse=true %}
 When saving a session, only save the current tab
 
 ```lua
@@ -125,7 +316,8 @@ vim.g.finni_config = {
 }
 ```
 {%-   endsection %}
-{%-   section "Custom Extension" with markdown=true %}
+
+{%-   section "Custom Extension" with markdown=true collapse=true %}
 You can save custom session data with your own extension.
 
 To create one, add a file to your runtimepath at `lua/finni/extensions/<myplugin>.lua`.
@@ -225,20 +417,15 @@ vim.g.finni_config = {
 {%-   endsection %}
 {%- endsection %}
 
-{%- section "API" %}
-{%-   section "Manual Sessions" %}
+
+{%- section "🔌 API" %}
 {{ doc.get("finni.session") }}
-{%-   endsection %}
-{%-   section "Autosessions" %}
 {{ doc.get("finni.auto") }}
-{%-   endsection %}
-{%-   section "Relevant Types" %}
-{{ typeref }}
-{%-   endsection %}
 {%- endsection %}
 
-{%- section "Extensions" %}
-{%- section "Built-in" with markdown=true %}
+
+{%- section "🧩 Extensions" %}
+{%-   section "Built-in" with markdown=true %}
 quickfix
 : Persist all quickfix lists, currently active list, active position in list and quickfix window.
 
@@ -253,8 +440,9 @@ oil.nvim
 
   Note: Customized from the one embedded in `oil.nvim` to correctly restore view.
 
-{%- endsection %}
-{%- section "External" with markdown=true %}
+{%-   endsection %}
+
+{%-   section "External" with markdown=true %}
 Here are some examples of external extensions:
 
 aerial.nvim
@@ -266,9 +454,11 @@ overseer.nvim
 : See https://github.com/stevearc/overseer.nvim
 
   Note: For Resession, which is compatible with Finni.
+{%-   endsection %}
 {%- endsection %}
-{%- endsection %}
-{%- section "FAQ" %}
+
+
+{%- section "❓ FAQ" %}
 Q: Why another session plugin? ~
 
 A1: All the other plugins (with the exception of `resession.nvim`)
@@ -282,7 +472,7 @@ Q: Why don't you want to use `:mksession`? ~
 
 A: While it's amazing that this feature is built-in to vim, and it does an
    impressively good job for most situations, it is very difficult to
-   customize. If `:help sessionoptions` covers your use case, then you're
+   customize. If `'sessionoptions'` covers your use case, then you're
    golden. If you want anything else, you're out of luck.
 
 Q: Why `Finni`? ~
@@ -305,3 +495,12 @@ A: One might assume the name of this plugin is a word play on the French
    Like your namesake plugin allows Neovim sessions to, may your memory
    live on forever.
 {%- endsection %}
+
+
+{%- section "Type Reference" with toc=false %}
+{{ typeref }}
+{%- endsection %}
+
+{%- raw %}
+vim:tw=78:ts=8:sw=4:sts=4:et:fdm=marker:fmr={{{,}}}:fen:ft=help:norl:
+{%- endraw %}

@@ -4,11 +4,12 @@
 --- Options to influence which data is included in a snapshot.
 ---@class snapshot.CreateOpts
 ---@field options? string[] #
----   Save and restore these neovim (global/buffer/tab/window) options
----@field buf_filter? fun(bufnr: integer, opts: snapshot.CreateOpts): boolean #
----   Custom logic for determining if a buffer should be included
----@field tab_buf_filter? fun(tabpage: integer, bufnr: integer, opts: snapshot.CreateOpts): boolean #
----   Custom logic for determining if a buffer should be included in a tab-scoped session
+---   Save and restore these Neovim (global|buffer|tab|window) options.
+---@field buf_filter? finni.BufFilter #
+---   Function that decides whether a buffer should be included in a snapshot.
+---@field tab_buf_filter? finni.TabBufFilter #
+---   Function that decides whether a buffer should be included in a tab-scoped snapshot.
+---   `buf_filter` is called first, this is to refine acceptable buffers only.
 ---@field modified? boolean|"auto" #
 ---   Save/load modified buffers and their undo history.
 ---   If set to `auto` (default), does not save, but still restores modified buffers.

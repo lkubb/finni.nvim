@@ -124,6 +124,7 @@ end
 ---@param ... any...
 ---@return Line
 local function fmt(level, msg, ...)
+  ---@diagnostic disable-next-line: undefined-field
   local timestamp = vim.uv.clock_gettime("realtime").sec
   local hrtime = vim.uv.hrtime()
   local args = vim.F.pack_len(...)
