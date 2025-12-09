@@ -120,7 +120,9 @@ Finni is always there for you when you need him.
 
 ```lua
 vim.pack.add("https://github.com/lkubb/finni.nvim")
+---@type finni.auto.InitHandler|boolean
 vim.g.finni_autosession = true -- optionally enable startup autosessions
+---@type finni.UserConfig
 vim.g.finni_config = { --[[ custom options/overrides ]] }
 ```
 
@@ -146,7 +148,9 @@ vim.g.finni_config = { --[[ custom options/overrides ]] }
   -- If you don't want to enable startup autosessions, you can use
   --  `opts` for custom configuration (or omit it if you want to use defaults).
   init = function()
+    ---@type finni.auto.InitHandler|boolean
     vim.g.finni_autosession = true -- optionally enable startup autosessions
+    ---@type finni.UserConfig
     vim.g.finni_config = { --[[ custom options/overrides ]] }
   end,
 }
@@ -167,7 +171,9 @@ MiniDeps.add({
   source = "lkubb/finni.nvim",
   checkout = "main",
 })
+---@type finni.auto.InitHandler|boolean
 vim.g.finni_autosession = true -- optionally enable startup autosessions
+---@type finni.UserConfig
 vim.g.finni_config = { --[[ custom options/overrides ]] }
 ```
 
