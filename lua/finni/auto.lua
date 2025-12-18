@@ -154,7 +154,7 @@ end
 
 --- Get the autosession configuration for an explicit project/session name pair.
 --- Note: Can fail if a directory can map to multiple sessions (e.g. with Git branches)
----       and its current state does not correspond to the session.
+--- and its current state does not correspond to the session.
 ---@param session string Name of the session
 ---@param project? string Name of the project. If unspecified, defaults to current one
 ---@param opts? finni.SideEffects.SilenceErrors
@@ -246,7 +246,7 @@ end
 
 --- Load an autosession.
 ---@param autosession? AutosessionContext|string #
----   The autosession table as rendered by `get_ctx` or cwd to pass to it
+--- The autosession table as rendered by `get_ctx` or cwd to pass to it
 ---@param opts? LoadOpts
 function M.load(autosession, opts)
   if type(autosession) == "string" then
@@ -341,8 +341,8 @@ end
 
 --- Load an existing autosession by project name and session name.
 --- Note: This can fail, e.g. when an autosession is associated
----       with a git branch and the worktree has checked out
----       a different one.
+--- with a git branch and the worktree has checked out
+--- a different one.
 ---@param session string Name of the session to load
 ---@param project? string Name of the project. If unspecified, defaults to current one
 ---@param opts? LoadOpts
@@ -549,7 +549,7 @@ end
 ---    closes everything and loads that session.
 --- 2. In any case, start monitoring for directory or branch changes.
 ---@param cwd? string #
----   Working directory to switch to before starting autosession. Defaults to nvim's process' cwd.
+--- Working directory to switch to before starting autosession. Defaults to nvim's process' cwd.
 ---@param opts? LoadOpts
 function M.start(cwd, opts)
   M.load(cwd or util.auto.cwd(), opts)
@@ -702,10 +702,10 @@ end
 
 --- List autosessions associated with a project.
 ---@param opts? ListOpts #
----   Specify the project to list.
----   If unspecified, lists active project, if available.
+--- Specify the project to list.
+--- If unspecified, lists active project, if available.
 ---@return string[] session_names #
----   List of known sessions associated with project
+--- List of known sessions associated with project
 function M.list(opts)
   opts = opts or {}
   local project_dir = opts.project_dir
@@ -768,8 +768,8 @@ end
 --- Caution! This does not account for projects with multiple associated directories/sessions!
 --- Checks the first session's cwd/enabled state only!
 ---@param opts? MigrateProjectsOpts #
----   Options for migration. You need to pass `{dry_run = false}`
----   for this function to have an effect.
+--- Options for migration. You need to pass `{dry_run = false}`
+--- for this function to have an effect.
 ---@return table<"broken"|"missing"|"skipped"|"migrated"|"deactivated"|"duplicate"|"empty"|"errors", table[]> migration_result #
 function M.migrate_projects(opts)
   opts = opts or {}
@@ -943,10 +943,10 @@ end
 --- Includes autosession information, if it is an autosession.
 ---@param opts {with_snapshot?: boolean}?
 ---@return ActiveAutosessionInfo? active_info #
----   Information about the active session, even if not an autosession.
----   Always includes snapshot configuration, session meta config and
----   whether it is an autosession. For autosessions, also includes
----   autosession config.
+--- Information about the active session, even if not an autosession.
+--- Always includes snapshot configuration, session meta config and
+--- whether it is an autosession. For autosessions, also includes
+--- autosession config.
 function M.info(opts)
   local cur = Session.get_global()
   if not cur then

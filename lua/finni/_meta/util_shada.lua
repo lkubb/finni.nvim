@@ -4,9 +4,9 @@
 --- Influence `Shada:read` behavior
 ---@class ReadOpts
 ---@field bang? boolean #
----   Overwrite this instance's ShaDa-sourced data with
----   the contents in this builder (instead of merging).
----   Defaults to false.
+--- Overwrite this instance's ShaDa-sourced data with
+--- the contents in this builder (instead of merging).
+--- Defaults to false.
 
 --- Many ShaDa entries are marks. This is the basic type without reference to a file path.
 ---@class EntryData.BaseMark
@@ -44,7 +44,7 @@
 ---@field [1] 0|1|2|3|4 History type (cmd/search/expr/input/debug)
 ---@field [2] string History line.
 ---@field [3]? integer #
----   Single byte value of separator char. Only for search type. E.g. `47` (ascii byte of /) for / search entry
+--- Single byte value of separator char. Only for search type. E.g. `47` (ascii byte of /) for / search entry
 
 ---@alias EntryType.Register 5
 ---@class EntryData.Register
@@ -62,7 +62,7 @@
 ---@alias EntryType.GlobalMark 7
 ---@class EntryData.GlobalMark: EntryData.BaseMark
 ---@field n integer #
----   Single byte value of the mark name (ASCII char, uppercase). In theory defaults to 34 (= `"`, unnamed register).
+--- Single byte value of the mark name (ASCII char, uppercase). In theory defaults to 34 (= `"`, unnamed register).
 
 ---@alias EntryType.Jump 8
 ---@class EntryData.Jump: EntryData.BaseMark
@@ -74,7 +74,7 @@
 ---@alias EntryType.LocalMark 10
 ---@class EntryData.LocalMark: EntryData.BaseMark
 ---@field n integer #
----   Single byte value of the mark name (ASCII char, lowercase). In theory defaults to 34 (= `"`, unnamed register).
+--- Single byte value of the mark name (ASCII char, lowercase). In theory defaults to 34 (= `"`, unnamed register).
 
 ---@alias EntryType.Change 11
 ---@class EntryData.Change: EntryData.BaseMark

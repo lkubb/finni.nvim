@@ -2040,7 +2040,7 @@ Then try to start a new one.
 
 Start Finni:
 1. If the current working directory has an associated project and session,
-closes everything and loads that session.
+   closes everything and loads that session.
 2. In any case, start monitoring for directory or branch changes.
 
 **Parameters:**
@@ -2139,7 +2139,7 @@ closes everything and loads that session.
 
 Stop Finni:
 1. If we're inside an active autosession, save it and detach.
-Keep buffers/windows/tabs etc. by default.
+   Keep buffers/windows/tabs etc. by default.
 2. In any case, stop monitoring for directory or branch changes.
 
 </details>

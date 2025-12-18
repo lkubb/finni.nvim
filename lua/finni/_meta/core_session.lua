@@ -3,40 +3,41 @@
 
 ---@class Session.Init.Paths
 ---@field session_file string #
----   Path to the session file
+--- Path to the session file
 ---@field state_dir string #
----   Path to the directory holding session-associated data
+--- Path to the directory holding session-associated data
 ---@field context_dir string #
----   Directory for shared state between all sessions in the same context
----   (`dir` for manual sessions, project dir for autosessions)
+--- Directory for shared state between all sessions in the same context
+--- (`dir` for manual sessions, project dir for autosessions)
 
 ---@class Session.Init.Autosave
 ---@field autosave_enabled? boolean #
----   When this session is attached, automatically save it in intervals. Defaults to false.
+--- When this session is attached, automatically save it in intervals. Defaults to false.
 ---@field autosave_interval? integer #
----   Seconds between autosaves of this session, if enabled. Defaults to 60.
+--- Seconds between autosaves of this session, if enabled. Defaults to 60.
 ---@field autosave_notify? boolean #
----   Trigger a notification when autosaving this session. Defaults to true.
+--- Trigger a notification when autosaving this session. Defaults to true.
 
 --- Autosave configuration after initializing the session, needs to resolve actual values.
 ---@class Session.Init.Autosave.Rendered: Session.Init.Autosave
 ---@field autosave_enabled boolean #
----   When this session is attached, automatically save it in intervals. Defaults to false.
+--- When this session is attached, automatically save it in intervals. Defaults to false.
 ---@field autosave_interval integer #
----   Seconds between autosaves of this session, if enabled. Defaults to 60.
+--- Seconds between autosaves of this session, if enabled. Defaults to 60.
 
 ---@class Session.Init.Hooks
 ---@field on_attach? Session.AttachHook #
----   A function that's called when attaching to this session. No global default.
+--- A function that's called when attaching to this session. No global default.
 ---@field on_detach? Session.DetachHook #
----   A function that's called when detaching from this session. No global default.
+--- A function that's called when detaching from this session. No global default.
 
 ---@class Session.Init.Meta
 ---@field meta? table #
----   External data remembered in association with this session. Useful to build on top of the core API.
+--- External data remembered in association with this session. Useful to build on top of the core API.
 
 --- Options to influence how an attached session is handled.
 ---@alias Session.InitOpts Session.Init.Autosave & Session.Init.Hooks & snapshot.CreateOpts
+
 --- Options to influence how an attached session is handled plus `meta` field, which can only be populated by passing
 --- it to the session constructor and is useful for custom session handling.
 ---@alias Session.InitOptsWithMeta Session.InitOpts & Session.Init.Meta
@@ -81,12 +82,12 @@
 --- Represents the complete internal state of a session
 ---@class ActiveSessionInfo: Session.Config
 ---@field name string #
----   Name of the session
+--- Name of the session
 ---@field tabid (TabID|true)? #
----   Tab number the session is attached to, if any. Can be `true`, which indicates it's a
----   tab-scoped session that has not been restored yet - although not when requesting via the API
+--- Tab number the session is attached to, if any. Can be `true`, which indicates it's a
+--- tab-scoped session that has not been restored yet - although not when requesting via the API
 ---@field tab_scoped boolean #
----   Whether the session is tab-scoped
+--- Whether the session is tab-scoped
 
 -- The following type definitions are quite painful at the moment. I'm unsure how to type this
 -- properly/whether emmylua just misses the functionality.
@@ -160,9 +161,9 @@ function Session.new(name, session_file, state_dir, context_dir, opts, tabid, ne
 ---@param context_dir string #
 ---@param opts Session.InitOptsWithMeta & finni.SideEffects.SilenceErrors #
 ---@return PendingSession<T>? loaded_session #
----   Session object, if the snapshot could be loaded
+--- Session object, if the snapshot could be loaded
 ---@return Snapshot? snapshot #
----   Snapshot data, if it could be loaded
+--- Snapshot data, if it could be loaded
 function Session.from_snapshot(name, session_file, state_dir, context_dir, opts) end
 
 --- Add hooks to attach/detach events for this session.
@@ -178,17 +179,17 @@ function Session:add_hook(event, hook) end
 --- Update modifiable options without attaching/detaching a session
 ---@param opts Session.InitOptsWithMeta #
 ---@return boolean modified #
----   Indicates whether any config modifications occurred
+--- Indicates whether any config modifications occurred
 function Session:update(opts) end
 
 --- Restore a snapshot from disk or memory
 ---@param opts? Session.RestoreOpts & PassthroughOpts #
 ---@param snapshot? Snapshot #
----   Snapshot data to restore. If unspecified, loads from file.
+--- Snapshot data to restore. If unspecified, loads from file.
 ---@return IdleSession<T> self #
----   The object itself, but now attachable
+--- The object itself, but now attachable
 ---@return boolean success #
----   Whether restoration was successful. Only sensible when `silence_errors` is true.
+--- Whether restoration was successful. Only sensible when `silence_errors` is true.
 function Session:restore(opts, snapshot) end
 
 --- Check whether this session is attached correctly.
@@ -218,8 +219,8 @@ function Session:delete(opts) end
 --- to be applied still before being able to attach it.
 ---@class PendingSession<T: Session.Target>: Session<T>
 ---@field needs_restore true #
----   Indicates this session has been loaded from a snapshot, but not restored yet.
----   This session object cannot be attached yet, it needs to be restored first.
+--- Indicates this session has been loaded from a snapshot, but not restored yet.
+--- This session object cannot be attached yet, it needs to be restored first.
 local PendingSession = {}
 
 ---------------------------------------------------------------------------------------------------
@@ -241,7 +242,7 @@ function IdleSession:attach() end
 --- callig this method since all session-specific options that might be contained
 --- in `opts` are overridden with ones configured for the session.
 ---@param opts? finni.SideEffects.Notify & Session.KnownHookOpts & PassthroughOpts #
----   Success notification setting plus options that need to be passed through to pre_save/post_save hooks.
+--- Success notification setting plus options that need to be passed through to pre_save/post_save hooks.
 ---@return boolean success #
 function IdleSession:save(opts) end
 
@@ -252,19 +253,19 @@ function IdleSession:save(opts) end
 --- An active (attached) session.
 ---@class ActiveSession<T: Session.Target>: IdleSession<T>
 ---@field autosave_enabled boolean #
----   Autosave this attached session in intervals and when detaching
+--- Autosave this attached session in intervals and when detaching
 ---@field autosave_interval integer #
----   Seconds between autosaves of this session, if enabled.
+--- Seconds between autosaves of this session, if enabled.
 ---@field _aug integer #
----   Neovim augroup for this session
+--- Neovim augroup for this session
 ---@field _timer uv.uv_timer_t? #
----   Autosave timer, if enabled
+--- Autosave timer, if enabled
 ---@field private _setup_autosave fun(self: ActiveSession<T>): nil
 local ActiveSession = {}
 
 ---@param opts? finni.SideEffects.Notify & PassthroughOpts #
 ---@param force? boolean #
----   Force snapshot to be saved, regardless of autosave config
+--- Force snapshot to be saved, regardless of autosave config
 function ActiveSession:autosave(opts, force) end
 
 --- Detach from this session. Ensure the session is attached before trying to detach,
@@ -273,13 +274,13 @@ function ActiveSession:autosave(opts, force) end
 --- ensure that you call `detach()` on the specific session instance you called `:attach()` on before, not a copy.
 --@param self ActiveSession<T>
 ---@param reason Session.DetachReasonBuiltin|string #
----   A reason for detaching, also passed to detach hooks.
----   Only inbuilt reasons influence behavior by default.
+--- A reason for detaching, also passed to detach hooks.
+--- Only inbuilt reasons influence behavior by default.
 ---@param opts Session.DetachOpts & PassthroughOpts #
----   Influence side effects. `reset` removes all associated resources.
----   `save` overrides autosave behavior.
+--- Influence side effects. `reset` removes all associated resources.
+--- `save` overrides autosave behavior.
 ---@return IdleSession<T> idle_session #
----   Same data table, but now representing an idle session again.
+--- Same data table, but now representing an idle session again.
 function ActiveSession:detach(reason, opts) end
 -- Note: In unions of e.g. ActiveSession<Session.TabTarget>|ActiveSession<Session.GlobalTarget>, the return type is wrongly
 -- inferred as IdleSession<Session.TabTarget> by emmylua here ^.
@@ -287,7 +288,7 @@ function ActiveSession:detach(reason, opts) end
 --- Mark a **tab** session as invalid (i.e. remembered as attached, but its tab is gone).
 --- Removes associated resources, skips autosave.
 ---@param self ActiveSession<Session.TabTarget> #
----   Active **tab** session to forget about. Errors if attempted with global sessions.
+--- Active **tab** session to forget about. Errors if attempted with global sessions.
 ---@return IdleSession<Session.TabTarget> idle_session #
 function ActiveSession.forget(self) end
 
@@ -295,8 +296,8 @@ function ActiveSession.forget(self) end
 --- It seems emmylua does not pick up this override and infers IdleSession<T> instead.
 ---@param opts? Session.RestoreOpts & PassthroughOpts #
 ---@param snapshot? Snapshot #
----   Snapshot to restore. If unspecified, loads from file.
+--- Snapshot to restore. If unspecified, loads from file.
 ---@return ActiveSession<T> self #
----   Same object.
+--- Same object.
 ---@return boolean success Whether restoration was successful. Only sensible when `silence_errors` is true.
 function ActiveSession:restore(opts, snapshot) end

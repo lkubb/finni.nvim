@@ -14,7 +14,7 @@ local M = {}
 
 --- Derive or ask user for session save file name
 ---@param tab_scoped? boolean #
----   Whether the saving session is a tab-scoped one. Defaults to false.
+--- Whether the saving session is a tab-scoped one. Defaults to false.
 ---@return string? session_name #
 local function get_save_name(tab_scoped)
   local current
@@ -42,9 +42,9 @@ end
 ---@param name string Name of the session to find
 ---@param opts DirParam Session dir override
 ---@param tabid? TabID|false
----   Pass expected tab ID or `true` to filter for any tab session.
----   Pass `nil` for a global session.
----   Pass `false` for either.
+--- Pass expected tab ID or `true` to filter for any tab session.
+--- Pass `nil` for a global session.
+--- Pass `false` for either.
 ---@param session_file? string Session file (snapshot) path to match against
 ---@param state_dir? string Session-associated data path to match against
 ---@param context_dir? string Context-associated data path to match against
@@ -142,8 +142,8 @@ end
 
 --- Save the current global state to disk
 ---@param name? string #
----   Name of the global session to save.
----   If not provided, takes name of attached one or prompts user.
+--- Name of the global session to save.
+--- If not provided, takes name of attached one or prompts user.
 ---@param opts? SaveOpts & PassthroughOpts
 function M.save(name, opts)
   name = name or get_save_name(false)
@@ -155,8 +155,8 @@ end
 
 --- Save the state of the current tabpage to disk
 ---@param name? string #
----   Name of the tabpage session to save.
----   If not provided, takes name of attached one in current tabpage or prompts user.
+--- Name of the tabpage session to save.
+--- If not provided, takes name of attached one in current tabpage or prompts user.
 ---@param opts? SaveOpts & PassthroughOpts
 function M.save_tab(name, opts)
   name = name or get_save_name(true)
@@ -213,8 +213,8 @@ end
 --- Note: The default value of `opts.reset = "auto"` resets when loading a normal session,
 --- but _not_ when loading a tab-scoped session.
 ---@param name? string #
----   Name of the session to load from session dir.
----   If not provided, prompts user.
+--- Name of the session to load from session dir.
+--- If not provided, prompts user.
 ---@param opts? LoadOpts & PassthroughOpts #
 function M.load(name, opts)
   ---@type LoadOpts & PassthroughOpts
@@ -315,7 +315,7 @@ end
 
 --- Delete a saved session from session dir
 ---@param name? string #
----   Name of the session. If not provided, prompts user
+--- Name of the session. If not provided, prompts user
 ---@param opts? DeleteOpts & PassthroughOpts
 function M.delete(name, opts)
   ---@type DeleteOpts & PassthroughOpts

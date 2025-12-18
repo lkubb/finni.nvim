@@ -4,183 +4,183 @@
 --- Options to influence which data is included in a snapshot.
 ---@class snapshot.CreateOpts
 ---@field options? string[] #
----   Save and restore these Neovim (global|buffer|tab|window) options.
+--- Save and restore these Neovim (global|buffer|tab|window) options.
 ---@field buf_filter? finni.BufFilter #
----   Function that decides whether a buffer should be included in a snapshot.
+--- Function that decides whether a buffer should be included in a snapshot.
 ---@field tab_buf_filter? finni.TabBufFilter #
----   Function that decides whether a buffer should be included in a tab-scoped snapshot.
----   `buf_filter` is called first, this is to refine acceptable buffers only.
+--- Function that decides whether a buffer should be included in a tab-scoped snapshot.
+--- `buf_filter` is called first, this is to refine acceptable buffers only.
 ---@field modified? boolean|"auto" #
----   Save/load modified buffers and their undo history.
----   If set to `auto` (default), does not save, but still restores modified buffers.
+--- Save/load modified buffers and their undo history.
+--- If set to `auto` (default), does not save, but still restores modified buffers.
 ---@field jumps? boolean #
----   Save/load window-specific jumplists, including current position
----   (yes, for **all windows**, not just the active one like with ShaDa).
----   If set to `auto` (default), does not save, but still restores saved jumplists.
+--- Save/load window-specific jumplists, including current position
+--- (yes, for **all windows**, not just the active one like with ShaDa).
+--- If set to `auto` (default), does not save, but still restores saved jumplists.
 ---@field changelist? boolean #
----   Save/load buffer-specific changelist (all buffers) and
----   changelist position (visible buffers only).
+--- Save/load buffer-specific changelist (all buffers) and
+--- changelist position (visible buffers only).
 ---
----   **Important**: Enabling this causes **buffer-local marks to be cleared** during restoration.
----   Consider tracking `local_marks` in addition to this.
+--- **Important**: Enabling this causes **buffer-local marks to be cleared** during restoration.
+--- Consider tracking `local_marks` in addition to this.
 ---@field global_marks? boolean #
----   Save/load global marks (A-Z, not 0-9 currently).
+--- Save/load global marks (A-Z, not 0-9 currently).
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field local_marks? boolean #
----   Save/load buffer-specific (local) marks.
+--- Save/load buffer-specific (local) marks.
 ---
----   **Note**: Enable this if you track the `changelist`.
+--- **Note**: Enable this if you track the `changelist`.
 ---@field search_history? (integer|boolean)? #
----   Maximum number of search history items to persist. Defaults to false.
----   If set to `true`, maps to the `'history'` option.
+--- Maximum number of search history items to persist. Defaults to false.
+--- If set to `true`, maps to the `'history'` option.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field command_history? (integer|boolean)? #
----   Maximum number of command history items to persist. Defaults to false.
----   If set to `true`, maps to the `'history'` option.
+--- Maximum number of command history items to persist. Defaults to false.
+--- If set to `true`, maps to the `'history'` option.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field input_history? (integer|boolean)? #
----   Maximum number of input history items to persist. Defaults to false.
----   If set to `true`, maps to the `'history'` option.
+--- Maximum number of input history items to persist. Defaults to false.
+--- If set to `true`, maps to the `'history'` option.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field expr_history? boolean? #
----   Persist expression history. Defaults to false.
----   **Note**: Cannot set limit (currently), no direct support by neovim.
+--- Persist expression history. Defaults to false.
+--- **Note**: Cannot set limit (currently), no direct support by neovim.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field debug_history? boolean? #
----   Persist debug history. Defaults to false.
----   **Note**: Cannot set limit (currently), no direct support by neovim.
+--- Persist debug history. Defaults to false.
+--- **Note**: Cannot set limit (currently), no direct support by neovim.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 
 ---@class snapshot.RestoreOpts
 ---@field reset? boolean #
----   Close everything in this neovim instance.
----   If unset/false, loads the snapshot into one or several clean tabs.
+--- Close everything in this neovim instance.
+--- If unset/false, loads the snapshot into one or several clean tabs.
 ---@field modified? boolean|"auto" #
----   If the snapshot contains unsaved buffer modifications, restore them.
+--- If the snapshot contains unsaved buffer modifications, restore them.
 ---@field jumps? boolean #
----   Restore window-specific jumplists and current position saved in snapshot.
----   Defaults to true.
+--- Restore window-specific jumplists and current position saved in snapshot.
+--- Defaults to true.
 ---@field changelist? boolean #
----   Restore buffer-specific changelists and current changelist position
----   (visible buffers only) saved in snapshot. Defaults to true.
+--- Restore buffer-specific changelists and current changelist position
+--- (visible buffers only) saved in snapshot. Defaults to true.
 ---
----   **Important**: Enabling this causes buffer-local marks to be cleared during restoration.
----   Consider tracking `local_marks` in addition to this.
+--- **Important**: Enabling this causes buffer-local marks to be cleared during restoration.
+--- Consider tracking `local_marks` in addition to this.
 ---@field global_marks? boolean #
----   Restore global marks saved in snapshot. Defaults to true. Only in global sessions.
+--- Restore global marks saved in snapshot. Defaults to true. Only in global sessions.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field local_marks? boolean #
----   Restore buffer-local marks saved in snapshot. Defaults to true.
+--- Restore buffer-local marks saved in snapshot. Defaults to true.
 ---@field search_history? (integer|boolean)? #
----   Reset search history and load it from session shada. Any truish value is accepted.
+--- Reset search history and load it from session shada. Any truish value is accepted.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field command_history? (integer|boolean)? #
----   Reset command history and load it from session shada. Any truish value is accepted.
+--- Reset command history and load it from session shada. Any truish value is accepted.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field input_history? (integer|boolean)? #
----   Reset input history and load it from session shada. Any truish value is accepted.
+--- Reset input history and load it from session shada. Any truish value is accepted.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field expr_history? boolean? #
----   Reset expression history and load it from session shada. Only in global sessions.
+--- Reset expression history and load it from session shada. Only in global sessions.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 ---@field debug_history? boolean? #
----   Reset debug history and load it from session shada. Only in global sessions.
+--- Reset debug history and load it from session shada. Only in global sessions.
 ---
----   _Only in global sessions._
+--- _Only in global sessions._
 
 --- Snapshot meta information, for creating snapshot-associated files that cannot (easily) be included in the snapshot table.
 ---@class snapshot.Context
 ---@field name? string #
----   Name of the snapshot being saved/restored
+--- Name of the snapshot being saved/restored
 ---@field state_dir? string #
----   Directory session-associated data like unsaved buffer modifications are stored in.
----   Required for `modified` handling and history persistence.
+--- Directory session-associated data like unsaved buffer modifications are stored in.
+--- Required for `modified` handling and history persistence.
 ---@field context_dir? string #
----   Shared state directory for all snapshots in this snapshot's context.
----   Note: Derived from `dir` for manual sessions or the project directory for autosessions.
----   Intended for shared project state such as ShaDa.
+--- Shared state directory for all snapshots in this snapshot's context.
+--- Note: Derived from `dir` for manual sessions or the project directory for autosessions.
+--- Intended for shared project state such as ShaDa.
 
 --- A snapshot of nvim's state.
 ---@class Snapshot
 ---@field buffers Snapshot.BufData[] #
----   Buffer-specific data like name, buffer options, local marks, changelist
+--- Buffer-specific data like name, buffer options, local marks, changelist
 ---@field tabs Snapshot.TabData[] #
----   Tab-specific and window layout data, including tab cwd and window-specific jumplists
+--- Tab-specific and window layout data, including tab cwd and window-specific jumplists
 ---@field tab_scoped boolean #
----   Whether this snapshot was derived from a single tab
+--- Whether this snapshot was derived from a single tab
 ---@field global Snapshot.GlobalData #
----   Global snapshot data like process CWD, global options and global marks
+--- Global snapshot data like process CWD, global options and global marks
 ---@field modified table<BufUUID, true?>? #
----   List of buffers (identified by internal UUID) whose unsaved modifications
----   were backed up in the snapshot
+--- List of buffers (identified by internal UUID) whose unsaved modifications
+--- were backed up in the snapshot
 ---@field buflist string[] #
----   List of named buffers that are referenced somewhere in this snapshot.
----   Used to reduce repetition of buffer paths in save file, especially lists of named marks
----   (jumplist, quickfix and location lists).
+--- List of named buffers that are referenced somewhere in this snapshot.
+--- Used to reduce repetition of buffer paths in save file, especially lists of named marks
+--- (jumplist, quickfix and location lists).
 
 --- Global snapshot data like cwd, height/width and global options.
 ---@class Snapshot.GlobalData
 ---@field cwd string #
----   Nvim's global cwd.
+--- Nvim's global cwd.
 ---@field height integer #
----   `vim.o.lines` - `vim.o.cmdheight`
+--- `vim.o.lines` - `vim.o.cmdheight`
 ---@field width integer #
----   `vim.o.columns`
+--- `vim.o.columns`
 ---@field options table<string, any> #
----   Global nvim options
+--- Global nvim options
 ---@field marks? table<string, FileMark?> #
----   Saved global marks, if enabled
+--- Saved global marks, if enabled
 ---@field search_history boolean #
----   Whether search history was saved in session-associated ShaDa file.
----   If enabled, corresponding history in nvim process should be cleared before loading.
+--- Whether search history was saved in session-associated ShaDa file.
+--- If enabled, corresponding history in nvim process should be cleared before loading.
 ---@field command_history boolean #
----   Whether command history was saved in session-associated ShaDa file.
----   If enabled, corresponding history in nvim process should be cleared before loading.
+--- Whether command history was saved in session-associated ShaDa file.
+--- If enabled, corresponding history in nvim process should be cleared before loading.
 ---@field input_history boolean #
----   Whether input history was saved in session-associated ShaDa file.
----   If enabled, corresponding history in nvim process should be cleared before loading.
+--- Whether input history was saved in session-associated ShaDa file.
+--- If enabled, corresponding history in nvim process should be cleared before loading.
 ---@field expr_history boolean #
----   Whether expression history was saved in session-associated ShaDa file.
----   If enabled, corresponding history in nvim process should be cleared before loading.
+--- Whether expression history was saved in session-associated ShaDa file.
+--- If enabled, corresponding history in nvim process should be cleared before loading.
 ---@field debug_history boolean #
----   Whether debug history was saved in session-associated ShaDa file.
----   If enabled, corresponding history in nvim process should be cleared before loading.
+--- Whether debug history was saved in session-associated ShaDa file.
+--- If enabled, corresponding history in nvim process should be cleared before loading.
 
 --- Buffer-specific snapshot data like path, loaded state, options and last cursor position.
 ---@class Snapshot.BufData
 ---@field name string #
----   Name of the buffer, usually its path.
----   Can be empty when unsaved modifications are backed up.
+--- Name of the buffer, usually its path.
+--- Can be empty when unsaved modifications are backed up.
 ---@field loaded boolean #
----   Whether the buffer was loaded.
+--- Whether the buffer was loaded.
 ---@field options table<string, any> #
----   Buffer-specific nvim options.
+--- Buffer-specific nvim options.
 ---@field last_pos AnonymousMark #
----   Position of the cursor when this buffer was last shown in a window (`"` mark).
----   Only updated once a buffer becomes invisible.
----   Visible buffer cursors are backed up in the window layout data.
+--- Position of the cursor when this buffer was last shown in a window (`"` mark).
+--- Only updated once a buffer becomes invisible.
+--- Visible buffer cursors are backed up in the window layout data.
 ---@field uuid string #
----   A buffer-specific UUID intended to track it between sessions. Required to save/restore unnamed buffers.
+--- A buffer-specific UUID intended to track it between sessions. Required to save/restore unnamed buffers.
 ---@field in_win boolean #
----   Whether the buffer is visible in at least one window.
+--- Whether the buffer is visible in at least one window.
 ---@field changelist? [Snapshot.BufData.ChangelistItem[], integer] #
----   Changelist and changelist position (backwards from most recent entry) for this buffer.
----   Position is always `0` when invisible buffers are saved.
+--- Changelist and changelist position (backwards from most recent entry) for this buffer.
+--- Position is always `0` when invisible buffers are saved.
 ---@field marks? table<string, AnonymousMark?> #
----   Saved buffer-local marks, if enabled
+--- Saved buffer-local marks, if enabled
 ---@field bt? 'acwrite'|'help'|'nofile'|'nowrite'|'quickfix'|'terminal'|'prompt' #
----   `buftype` option of buffer. Unset if empty (`""`).
+--- `buftype` option of buffer. Unset if empty (`""`).
 
 ---@class Snapshot.BufData.ChangelistItem: AnonymousMark
 -- TODO: coladd?
@@ -188,13 +188,13 @@
 --- Tab-specific (options, cwd) and window layout snapshot data.
 ---@class Snapshot.TabData
 ---@field options table<string, any> #
----   Tab-specific nvim options. Currently only `cmdheight`.
+--- Tab-specific nvim options. Currently only `cmdheight`.
 ---@field wins layout.WinLayout #
----   Window layout enriched with window-specific snapshot data
+--- Window layout enriched with window-specific snapshot data
 ---@field cwd? string #
----   Tab-local cwd, if different from the global one or a tab-scoped snapshot
+--- Tab-local cwd, if different from the global one or a tab-scoped snapshot
 ---@field current? boolean
----   Whether this tabpage was the active one. Only present for global sessions.
+--- Whether this tabpage was the active one. Only present for global sessions.
 
 --- Represents a quickfix/location list
 ---@class Snapshot.QFList

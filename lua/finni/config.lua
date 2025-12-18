@@ -17,72 +17,72 @@ local M = {}
 --- User configuration for this plugin.
 ---@class UserConfig
 ---@field autosession? UserConfig.autosession #
----   Influence autosession behavior and contents.
----   Specify defaults that apply to all autosessions.
----   By overriding specific hooks, you can minutely customize almost any aspect
----   of when an autosession is triggered, how it's handled and what is persisted in it.
+--- Influence autosession behavior and contents.
+--- Specify defaults that apply to all autosessions.
+--- By overriding specific hooks, you can minutely customize almost any aspect
+--- of when an autosession is triggered, how it's handled and what is persisted in it.
 ---@field extensions? table<string,any> #
----   Configuration for extensions, both Resession ones and those specific to Finni.
----   Note: Finni first tries to load specified extensions in `finni.extensions`,
----   but falls back to `resession.extension` with a warning. Avoid this overhead
----   for Resession extensions by specifying `resession_compat = true` in the extension config.
+--- Configuration for extensions, both Resession ones and those specific to Finni.
+--- Note: Finni first tries to load specified extensions in `finni.extensions`,
+--- but falls back to `resession.extension` with a warning. Avoid this overhead
+--- for Resession extensions by specifying `resession_compat = true` in the extension config.
 ---@field load? UserConfig.load #
----   Configure session list information detail and sort order.
+--- Configure session list information detail and sort order.
 ---@field log? UserConfig.log #
----   Configure plugin logging.
+--- Configure plugin logging.
 ---@field session? UserConfig.session #
----   Configure default session behavior and contents, affects both manual and autosessions.
----   Note: In the following field descriptions, "this session" refers to all sessions
----         that don't override these defaults.
+--- Configure default session behavior and contents, affects both manual and autosessions.
+--- Note: In the following field descriptions, "this session" refers to all sessions
+--- that don't override these defaults.
 
 --- Configure autosession behavior and contents
 ---@class UserConfig.autosession
 ---@field config? core.Session.InitOpts #
----   Save/load configuration for autosessions.
----   Definitions in here override the defaults in `session`.
+--- Save/load configuration for autosessions.
+--- Definitions in here override the defaults in `session`.
 ---@field dir? string #
----   Name of the directory to store autosession projects in.
----   Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
----   Defaults to `finni`.
+--- Name of the directory to store autosession projects in.
+--- Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+--- Defaults to `finni`.
 ---@field spec? auto.SpecHook #
----   This function implements the logic that derives the autosession spec from a path,
----   usually the current working directory. If it returns an autosession spec, Finni
----   automatically switches to the session's workspace root and tries to restore an
----   existing matching session (matched by project name + session name).
----   If it returns nothing, it's interpreted as "no autosession should be active".
+--- This function implements the logic that derives the autosession spec from a path,
+--- usually the current working directory. If it returns an autosession spec, Finni
+--- automatically switches to the session's workspace root and tries to restore an
+--- existing matching session (matched by project name + session name).
+--- If it returns nothing, it's interpreted as "no autosession should be active".
 ---
----   It is called during various points in Finni's lifecycle:
----   1. Neovim startup (if startup autosessions are enabled)
----   2. When Neovim changes its global working directory
----   3. When a git branch is switched (if you have installed gitsigns.nvim)
+--- It is called during various points in Finni's lifecycle:
+--- 1. Neovim startup (if startup autosessions are enabled)
+--- 2. When Neovim changes its global working directory
+--- 3. When a git branch is switched (if you have installed gitsigns.nvim)
 ---
----   If the return value does not match the current state, the currently active
----   session (if any) is saved + closed and the new session (if any) restored.
+--- If the return value does not match the current state, the currently active
+--- session (if any) is saved + closed and the new session (if any) restored.
 ---
----   The default implementation calls `workspace`, `project_name`, `session_name`,
----   `enabled` and `load_opts` to piece together the specification.
----   By overriding this config field, you can implement a custom logic.
----   Mind that the other hooks have no effect then (unless you call them manually).
+--- The default implementation calls `workspace`, `project_name`, `session_name`,
+--- `enabled` and `load_opts` to piece together the specification.
+--- By overriding this config field, you can implement a custom logic.
+--- Mind that the other hooks have no effect then (unless you call them manually).
 ---@field workspace? auto.WorkspaceHook #
----   Receive the effective nvim cwd, return workspace root and whether it is git-tracked.
+--- Receive the effective nvim cwd, return workspace root and whether it is git-tracked.
 ---@field project_name? auto.ProjectNameHook #
----   Receive the workspace root dir and whether it's git-tracked, return the project-specific session directory name.
+--- Receive the workspace root dir and whether it's git-tracked, return the project-specific session directory name.
 ---@field session_name? auto.SessionNameHook #
----   Receive the effective nvim cwd, the workspace root, the project name and workspace repo git info and generate a session name.
+--- Receive the effective nvim cwd, the workspace root, the project name and workspace repo git info and generate a session name.
 ---@field enabled? auto.EnabledHook #
----   Receive the effective nvim cwd, the workspace root and project name and decide
----   whether an autosession with this configuration should be active.
+--- Receive the effective nvim cwd, the workspace root and project name and decide
+--- whether an autosession with this configuration should be active.
 ---@field load_opts? auto.LoadOptsHook #
----   Influence how an autosession is loaded/persisted, e.g. load the session without attaching it or disable modified persistence.
----   Merged on top of the default autosession configuration for this specific autosession only.
+--- Influence how an autosession is loaded/persisted, e.g. load the session without attaching it or disable modified persistence.
+--- Merged on top of the default autosession configuration for this specific autosession only.
 
 --- Configure session list information detail and sort order
 ---@class UserConfig.load
 ---@field detail? boolean #
----   Show more detail about the sessions when selecting one to load.
----   Disable if it causes lag.
+--- Show more detail about the sessions when selecting one to load.
+--- Disable if it causes lag.
 ---@field order? "modification_time"|"creation_time"|"filename" #
----   Session list order
+--- Session list order
 
 --- Configure plugin logging
 ---@class UserConfig.log
@@ -90,26 +90,26 @@ local M = {}
 ---@field notify_level? finni.log.ConfigLevel Minimum level to use `vim.notify` for. Defaults to `warn`.
 ---@field notify_opts? table Options to pass to `vim.notify`. Defaults to `{ title = "Finni" }`
 ---@field format? string #
----   Log line format string. Note that this works like Python's f-strings.
----   Defaults to `[%(level)s %(dtime)s] %(message)s%(src_sep)s[%(src_path)s:%(src_line)s]`.
----   Available parameters:
----   * `level` Uppercase level name
----   * `message` Log message
----   * `dtime` Formatted date/time string
----   * `hrtime` Time in `[ns]` without absolute anchor
----   * `src_path` Path to the file that called the log function
----   * `src_line` Line in `src_path` that called the log function
----   * `src_sep` Whitespace between log line and source of call, 2 tabs for single line, newline + tab for multiline log messages
+--- Log line format string. Note that this works like Python's f-strings.
+--- Defaults to `[%(level)s %(dtime)s] %(message)s%(src_sep)s[%(src_path)s:%(src_line)s]`.
+--- Available parameters:
+--- * `level` Uppercase level name
+--- * `message` Log message
+--- * `dtime` Formatted date/time string
+--- * `hrtime` Time in `[ns]` without absolute anchor
+--- * `src_path` Path to the file that called the log function
+--- * `src_line` Line in `src_path` that called the log function
+--- * `src_sep` Whitespace between log line and source of call, 2 tabs for single line, newline + tab for multiline log messages
 ---@field notify_format? string Same as `format`, but for `vim.notify` message display. Defaults to `%(message)s`.
 ---@field time_format? string #
----   `strftime` format string used for rendering time of call. Defaults to `%Y-%m-%d %H:%M:%S`
+--- `strftime` format string used for rendering time of call. Defaults to `%Y-%m-%d %H:%M:%S`
 ---@field handler? fun(line: finni.log.Line) Custom function in charge of outputting log lines. Mostly useful in tests.
 
 --- Configure default session behavior and contents, affects both manual and autosessions.
 ---@class UserConfig.session: core.Session.InitOpts
 ---@field dir? string #
----   Name of the directory to store regular sessions in.
----   Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+--- Name of the directory to store regular sessions in.
+--- Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
 
 -- Until https://github.com/EmmyLuaLs/emmylua-analyzer-rust/issues/328 is resolved:
 -- NOTE: Keep in sync with above
@@ -318,8 +318,8 @@ local defaults = {
 --- Read configuration overrides from `vim.g.finni_config` and
 --- (re)initialize all modules that need initialization.
 ---@param config? UserConfig #
----   Default config overrides. This table is merged on top of `vim.g.finni_config`,
----   which is itself merged on top of the default config.
+--- Default config overrides. This table is merged on top of `vim.g.finni_config`,
+--- which is itself merged on top of the default config.
 function M.setup(config)
   ---@diagnostic disable-next-line: param-type-mismatch, param-type-not-match
   local new = vim.tbl_deep_extend("force", defaults, vim.g.finni_config or {}, config or {})

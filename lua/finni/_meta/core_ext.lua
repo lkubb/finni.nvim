@@ -11,46 +11,46 @@
 --- This is the interface for Resession-compatible extensions.
 ---@class (exact) resession.Extension
 ---@field on_save? fun(opts: resession.Extension.OnSaveOpts): any #
----   Called when saving a session. Should return necessary state.
+--- Called when saving a session. Should return necessary state.
 ---@field on_pre_load? fun(data: any) #
----   Called before restoring a session, receives the data returned by `on_save`.
+--- Called before restoring a session, receives the data returned by `on_save`.
 ---@field on_post_load? fun(data: any) #
----   Called after restoring a session, receives the data returned by `on_save`.
+--- Called after restoring a session, receives the data returned by `on_save`.
 ---@field config? fun(options: table) #
----   Called when loading the extension, can receive extension-specific configuration.
+--- Called when loading the extension, can receive extension-specific configuration.
 ---@field is_win_supported? fun(winid: integer, bufnr: integer): boolean #
----   Called when backing up window layout. Return `true` here to include the window in the snapshot.
----   `save_win` is called after.
+--- Called when backing up window layout. Return `true` here to include the window in the snapshot.
+--- `save_win` is called after.
 ---@field save_win? fun(winid: integer): any #
----   Called when backing up window layout and `is_win_supported` has returned `true`.
+--- Called when backing up window layout and `is_win_supported` has returned `true`.
 ---@field load_win? fun(winid: integer, data: any): integer? #
----   Called when restoring window layout. Receives the data returned by `save_win`,
----   should return window ID of the restored window, if successful.
+--- Called when restoring window layout. Receives the data returned by `save_win`,
+--- should return window ID of the restored window, if successful.
 
---------------------
--- Finni-specific --
---------------------
+--------------------------
+-- Finni-specific  --
+--------------------------
 ---@namespace finni.core
 
 --- Finni-specific extensions can make use of two additional hooks, which were required when
 --- the autosession behavior was implemented as an extension instead of a separate interface.
 ---@class Extension: resession.Extension
 ---@field on_save? fun(opts: resession.Extension.OnSaveOpts & snapshot.Context, buflist: finni.core.snapshot.BufList): any #
----   Called when saving a session. Should return necessary state.
+--- Called when saving a session. Should return necessary state.
 ---@field on_pre_load? fun(data: any, opts: snapshot.Context, buflist: string[]) #
----   Called before restoring a session, receives the data returned by `on_save`.
+--- Called before restoring a session, receives the data returned by `on_save`.
 ---@field on_post_load? fun(data: any, opts: snapshot.Context, buflist: string[]) #
----   Called after restoring a session, receives the data returned by `on_save`.
+--- Called after restoring a session, receives the data returned by `on_save`.
 ---@field load_win? fun(winid: integer, data: any, win: layout.WinInfo): integer? #
----   Called when restoring window layout. Receives the data returned by `save_win`,
----   should return window ID of the restored window, if successful.
+--- Called when restoring window layout. Receives the data returned by `save_win`,
+--- should return window ID of the restored window, if successful.
 ---@field on_post_bufinit? fun(data: any, visible_only: boolean) #
----   Called after **visible** buffers were loaded. Receives data from `on_save`.
----   Note that invisible buffers are not loaded at all yet and visible buffers may not have been entered,
----   which is necessary for a complete, functional restoration.
+--- Called after **visible** buffers were loaded. Receives data from `on_save`.
+--- Note that invisible buffers are not loaded at all yet and visible buffers may not have been entered,
+--- which is necessary for a complete, functional restoration.
 ---@field on_buf_load? fun(data: any, buffer: integer) #
----   Called when a restored buffer is entered, during the final restoration of the buffer to make it functional.
----   Receives the relevant buffer number and the data returned by `on_save`.
+--- Called when a restored buffer is entered, during the final restoration of the buffer to make it functional.
+--- Receives the relevant buffer number and the data returned by `on_save`.
 
 --- Hooks are functions that a **user** can register to subscribe to Finni's internal events.
 --- They are separate from extensions (completely) or `User` autocmds (relatively).
