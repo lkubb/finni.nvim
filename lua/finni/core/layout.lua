@@ -560,15 +560,17 @@ local function set_winlayout_data(layout, scale_factor, buflist)
 
   -- Restore loclist windows.
   for locl_winid, locl_win in pairs(loclist_wins) do
-    local ref_winid = winid_old_new[assert(locl_win.loclist_win)] -- "filewinid" of loclist win
-    if ref_winid then
-      vim.api.nvim_set_current_win(ref_winid) -- Ensure the associated window is focused
-      util.opts.with({ eventignore = "" }, function()
-        vim.cmd("lopen") -- Create loclist window between associated one and placeholder, we're switching focus to the new one here
-      end)
-      local new_winid = vim.api.nvim_get_current_win()
-      vim.api.nvim_win_close(locl_winid, true) -- Remove the placeholder.
-      locl_win.winid = new_winid -- We replaced the window, update winid
+    if locl_win.loclist_win then
+      local ref_winid = winid_old_new[locl_win.loclist_win] -- "filewinid" of loclist win
+      if ref_winid then
+        vim.api.nvim_set_current_win(ref_winid) -- Ensure the associated window is focused
+        util.opts.with({ eventignore = "" }, function()
+          vim.cmd("lopen") -- Create loclist window between associated one and placeholder, we're switching focus to the new one here
+        end)
+        local new_winid = vim.api.nvim_get_current_win()
+        vim.api.nvim_win_close(locl_winid, true) -- Remove the placeholder.
+        locl_win.winid = new_winid -- We replaced the window, update winid
+      end
     end
   end
   -- Need to reset winfix[height|width], otherwise the final dimensions

@@ -17,7 +17,7 @@
 ---   instead of current one. Set this to `true` to use nvim's current global CWD.
 ---@field reload? boolean Attempt to restart a new autosession after reset. Defaults to true.
 
----@class ResetProjectOpts
+---@class ResetProjectOpts: Notify
 ---@field name? string #
 ---   Specify the project to reset. If unspecified, resets active project, if available.
 ---@field force? boolean #

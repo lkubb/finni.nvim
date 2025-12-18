@@ -61,6 +61,7 @@ The wall, sadly, may not be.
     (Finni started by forking it, a heartfelt thank you @stevearc for laying the arduous ground work! <3)
   - For the brave, an even more low-level session and snapshot API (`finni.core.session`, `finni.core.snapshot`)
     is available.
+- Inbuilt pickers for `snacks.picker`, `fzf-lua`, `mini.pick` and `telescope.nvim`
 
 [^1]: similar to scope-specific ShaDa via `'shadafile'`
 {%- endsection %}
@@ -210,6 +211,119 @@ Finni creates an Ex command with the same name (`:Finni`). It currently exposes 
    ```
    :Finni load /home/me/code/my_project modified=false
    ```
+{%-   endsection %}
+
+{%-   section "Pickers" %}
+{%-       para with markdown=true %}
+Finni comes with inbuilt support for most popular pickers (`snacks.picker`, `fzf-lua`, `mini.pick`, `telescope.nvim`).
+You can load and manage manual sessions, autosessions and projects.
+
+Pickers other than `snacks.picker` (where no such thing exists) and `telescope` (which is always available) are registered when
+their module is required and the underlying picker has already been setup, when you explicitly launch a picker
+(`require ("finni.pickers.mini_pick").manual_picker()`) or call the picker's `setup` function with
+`register` being set to `true`. This means you can call them with the underlying plugin's Ex command afterwards:
+
+* `:Telescope finni auto_all` (`telescope.nvim`)
+* `:Pick finni_auto_all` (`mini.pick`)
+* `:FzfLua finni_auto_all` (`fzf-lua`)
+
+The pickers are called:
+* `manual`: Pick manual sessions.
+* `auto_all`: Pick all autosessions from all projects.
+* `auto`: Pick autosessions from current project.
+* `projects`: Pick known projects.
+{%-       endpara %}
+
+{%-     section "Keybinds" with markdown=true %}
+Select a session and hit enter to load it. Delete a session or project by pressing `<M-d>` (Alt/Option + d) when selected. From the overview
+of project autosessions, you can navigate to the projects overview by pressing `<C-^>` (`<C-6>`).
+{%-     endsection %}
+
+{%-     section "Configuration" %}
+{%-       para with markdown=true %}
+When launching a picker, you can override any options that get passed to the underlying plugin via the `raw` key. There are some
+Finni-specific options (such as `dir`) as well. If you want to override the defaults without specifying them in every picker call,
+you can pass them to the picker's `setup` function (Telescope can handle this automatically for you).
+{%-       endpara %}
+
+{{- doc.get("finni.pickers.PickerConfig") }}
+{%-     endsection %}
+
+{%-     section "`snacks.picker`" with collapse=true %}
+{%-       para with markdown=true %}
+```lua
+-- Pick manual sessions
+require("finni.pickers.snacks").manual_picker()
+-- Pick autosessions, spanning all known projects
+require("finni.pickers.snacks").auto_all_picker()
+-- Pick autosessions in the active project
+require("finni.pickers.snacks").auto_picker()
+-- Pick known projects
+require("finni.pickers.snacks").project_picker()
+```
+{%-       endpara %}
+
+{{- doc.get("finni.pickers.snacks") }}
+{%-     endsection %}
+{%-     section "`fzf-lua`" with collapse=true %}
+{%-       para with markdown=true %}
+```lua
+-- Pick manual sessions
+require("finni.pickers.fzf_lua").manual_picker()
+-- Pick autosessions, spanning all known projects
+require("finni.pickers.fzf_lua").auto_all_picker()
+-- Pick autosessions in the active project
+require("finni.pickers.fzf_lua").auto_picker()
+-- Pick known projects
+require("finni.pickers.fzf_lua").project_picker()
+```
+{%-       endpara %}
+{{- doc.get("finni.pickers.fzf_lua") }}
+{%-     endsection %}
+{%-     section "`mini.pick`" with collapse=true %}
+{%-       para with markdown=true %}
+```lua
+-- Pick manual sessions
+require("finni.pickers.mini_pick").manual_picker()
+-- Pick autosessions, spanning all known projects
+require("finni.pickers.mini_pick").auto_all_picker()
+-- Pick autosessions in the active project
+require("finni.pickers.mini_pick").auto_picker()
+-- Pick known projects
+require("finni.pickers.mini_pick").project_picker()
+{%-       endpara %}
+```
+
+{{- doc.get("finni.pickers.mini_pick") }}
+{%-     endsection %}
+{%-     section "`telescope.nvim`" with collapse=true %}
+{%-       para with markdown=true %}
+```lua
+-- Pick manual sessions
+require("finni.pickers.telescope").manual_picker()
+-- Pick autosessions, spanning all known projects
+require("finni.pickers.telescope").auto_all_picker()
+-- Pick autosessions in the active project
+require("finni.pickers.telescope").auto_picker()
+-- Pick known projects
+require("finni.pickers.telescope").project_picker()
+```
+
+Note: You can explicitly register the `finni` extension in Telescope's options:
+
+```lua
+require("telescope").setup({
+  -- ...
+  extensions = {
+    -- ...
+    finni = { --[[ custom overrides, see finni.pickers.PickerConfig]] }
+  }
+})
+```
+{%-       endpara %}
+
+{{- doc.get("finni.pickers.telescope") }}
+{%-     endsection %}
 {%-   endsection %}
 {%- endsection %}
 

@@ -1,3 +1,5 @@
+cwd := $(shell pwd)
+
 ## help: Print this help message
 .PHONY: help
 help:
@@ -33,24 +35,28 @@ test: deps _cleantest
 			exit 1; \
 		fi; \
 		echo "Running tests in: $$FOUND_FILE"; \
-		XDG_CONFIG_HOME=".test/env/config" \
-		XDG_DATA_HOME=".test/env/data" \
-		XDG_STATE_HOME=".test/env/state" \
-		XDG_RUNTIME_DIR=".test/env/run" \
-		XDG_CACHE_HOME=".test/env/cache" \
+		XDG_CONFIG_HOME="${cwd}/.test/env/config" \
+		XDG_DATA_HOME="${cwd}/.test/env/data" \
+		XDG_STATE_HOME="${cwd}/.test/env/state" \
+		XDG_RUNTIME_DIR="${cwd}/.test/env/run" \
+		XDG_CACHE_HOME="${cwd}/.test/env/cache" \
 		nvim --headless --noplugin -u ./scripts/minimal_init.lua -c "lua MiniTest.run_file('$$FOUND_FILE')"; \
 	else \
-		XDG_CONFIG_HOME=".test/env/config" \
-		XDG_DATA_HOME=".test/env/data" \
-		XDG_STATE_HOME=".test/env/state" \
-		XDG_RUNTIME_DIR=".test/env/run" \
-		XDG_CACHE_HOME=".test/env/cache" \
+		XDG_CONFIG_HOME="${cwd}/.test/env/config" \
+		XDG_DATA_HOME="${cwd}/.test/env/data" \
+		XDG_STATE_HOME="${cwd}/.test/env/state" \
+		XDG_RUNTIME_DIR="${cwd}/.test/env/run" \
+		XDG_CACHE_HOME="${cwd}/.test/env/cache" \
 		nvim --headless --noplugin -u ./scripts/minimal_init.lua -c "lua MiniTest.run()"; \
 	fi;
 
 .PHONY: _cleantest
 _cleantest: .test
-	@rm -rf ".test/env/state/nvim"; \
+	@rm -rf ".test/env/cache/nvim"; \
+	rm -rf ".test/env/config/nvim"; \
+	rm -rf ".test/env/data/nvim"; \
+	rm -rf ".test/env/state/nvim"; \
+	rm -rf ".test/env/run/nvim"; \
 	rm -f ".test/nvim_init.lua"
 
 .test: .test/env
@@ -67,7 +73,11 @@ _cleantest: .test
 	@mkdir -p ".test/env/run"
 
 ## deps: Install all library dependencies
-deps: deps/gitsigns.nvim deps/luv deps/mini.nvim deps/neogit deps/oil.nvim
+deps: deps/fzf-lua deps/gitsigns.nvim deps/luv deps/mini.nvim deps/neogit deps/oil.nvim deps/plenary.nvim deps/snacks.nvim deps/telescope.nvim
+
+deps/fzf-lua:
+	@mkdir -p deps
+	git clone --filter=blob:none https://github.com/ibhagwan/fzf-lua $@
 
 deps/gitsigns.nvim:
 	@mkdir -p deps
@@ -88,6 +98,18 @@ deps/neogit:
 deps/oil.nvim:
 	@mkdir -p deps
 	git clone --filter=blob:none https://github.com/stevearc/oil.nvim $@
+
+deps/plenary.nvim:
+	@mkdir -p deps
+	git clone --filter=blob:none https://github.com/nvim-lua/plenary.nvim $@
+
+deps/snacks.nvim:
+	@mkdir -p deps
+	git clone --filter=blob:none https://github.com/folke/snacks.nvim $@
+
+deps/telescope.nvim:
+	@mkdir -p deps
+	git clone --filter=blob:none https://github.com/nvim-telescope/telescope.nvim $@
 
 ## lint: Run linters, test-render md/vim docs and EmmyLuaLS typechecking
 .PHONY: lint

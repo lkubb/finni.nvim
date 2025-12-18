@@ -171,6 +171,7 @@ local function wshada_hist(opts, snapshot_ctx, snapshot)
       local curwin = vim.api.nvim_get_current_win()
       -- Use the current buffer specifically to avoid causing a tabline redraw,
       -- which would also exit visual mode.
+      -- FIXME: This might fail with E565
       local sacrificial_winid = vim.api.nvim_open_win(0, true, {
         relative = "editor",
         row = 0,

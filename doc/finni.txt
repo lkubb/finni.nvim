@@ -23,6 +23,7 @@ Table of Contents
  4. 🚀 Usage ..................................................... |finni-usage|
    • Keymaps ............................................. |finni-usage-keymaps|
    • Ex command ....................................... |finni-usage-ex-command|
+   • Pickers ............................................. |finni-usage-pickers|
  5. 👤 Concepts ............................................... |finni-concepts|
  6. ❗ Limitations and caveats ................. |finni-limitations-and-caveats|
  7. ⚙️ Configuration ..................................... |finni-configuration|
@@ -85,6 +86,8 @@ Table of Contents
     ground work! <3)
   • For the brave, an even more low-level session and snapshot API
     (`finni.core.session`, `finni.core.snapshot`) is available.
+• Inbuilt pickers for `snacks.picker`, `fzf-lua`, `mini.pick` and
+  `telescope.nvim`
 
 
 ==============================================================================
@@ -238,6 +241,304 @@ exposes the autosession API (|finni.auto|) only.
 4. Full example: >
        :Finni load /home/me/code/my_project modified=false
 <
+
+
+PICKERS                                                    *finni-usage-pickers*
+Finni comes with inbuilt support for most popular pickers
+(`snacks.picker`, `fzf-lua`, `mini.pick`, `telescope.nvim`). You can
+load and manage manual sessions, autosessions and projects.
+
+
+                                                  *finni-usage-pickers-keybinds*
+Keybinds ~
+Select a session and hit enter to load it. Delete a session or project
+by pressing `<M-d>` (Alt/Option + d) when selected. From the overview
+of project autosessions, you can navigate to the projects overview by
+pressing `<C-^>` (`<C-6>`).
+
+
+                                             *finni-usage-pickers-configuration*
+Configuration ~
+When launching a picker, you can override any options that get
+passed to the underlying library via the `raw` key. There are some
+Finni-specific options (such as `dir`) as well. If you want to override
+the defaults without specifying them in every picker call, you can
+pass them to the picker’s `setup` function (Telescope can handle
+this automatically for you).
+
+Pickers other than the `snacks.picker` (where no such thing exists)
+are registered when their module is required and the underlying
+picker has already been setup or when you explicitly launch a picker
+(`require ("finni.pickers.mini_pick").manual_picker()`). This means you
+can call them with the underlying library’s Ex command afterwards:
+
+• `Telescope finni auto_all` (`telescope.nvim`)
+• `Pick finni_auto_all` (`mini.pick`)
+• `FzfLua finni_auto_all` (`fzf-lua`)
+
+
+                                                    *finni.pickers.PickerConfig*
+`finni.pickers.PickerConfig` (Class) ~
+    Fields: ~
+      • {raw} |finni.pickers.PickerRawOverrides|
+          Override any options that are passed to a picker. Valid values
+          depend on the specific picker plugin.
+
+          Table fields:
+          • {default} `table`
+              Override any (picker plugin-specific) options passed to all
+              picker types.
+          • {manual} `table`
+              Override any (picker plugin-specific) options passed to the
+              manual session picker.
+          • {auto} `table`
+              Override any (picker plugin-specific) options passed to the
+              autosession picker.
+          • {auto_all} `table`
+              Override any (picker plugin-specific) options passed to the
+              global autosession picker.
+          • {project} `table`
+              Override any (picker plugin-specific) options passed to the
+              project autosession picker.
+      • {dir}? `string`
+          Override the default manual session directory (`session.dir`)
+                                             *finni-usage-pickers-snacks-picker*
+`snacks.picker` ~
+{{{
+>lua
+    -- Pick manual sessions
+    require("finni.pickers.snacks").manual_picker()
+    -- Pick autosessions, spanning all known projects
+    require("finni.pickers.snacks").auto_all_picker()
+    -- Pick autosessions in the active project
+    require("finni.pickers.snacks").auto_picker()
+    -- Pick known projects
+    require("finni.pickers.snacks").project_picker()
+<
+
+
+                                                          *finni.pickers.snacks*
+`finni.pickers.snacks` (Module) ~
+
+setup({opts})                                     *finni.pickers.snacks.setup()*
+    Override picker defaults
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Defaults for future calls.
+
+manual_picker({opts})                     *finni.pickers.snacks.manual_picker()*
+    Load or delete existing manual sessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_all_picker({opts})                 *finni.pickers.snacks.auto_all_picker()*
+    Load or delete existing autosessions spanning all projects.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_picker({opts}, {project_name})         *finni.pickers.snacks.auto_picker()*
+    Load or delete existing autosessions in specific project only.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+      • {project_name}? `string`
+          List autosessions from this project. Defaults to current one.
+
+project_picker({opts})                   *finni.pickers.snacks.project_picker()*
+    Inspect or delete existing projects. Select project to manage/load its
+    autosessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+}}}
+
+                                                   *finni-usage-pickers-fzf-lua*
+`fzf-lua` ~
+{{{
+>lua
+    -- Pick manual sessions
+    require("finni.pickers.fzf_lua").manual_picker()
+    -- Pick autosessions, spanning all known projects
+    require("finni.pickers.fzf_lua").auto_all_picker()
+    -- Pick autosessions in the active project
+    require("finni.pickers.fzf_lua").auto_picker()
+    -- Pick known projects
+    require("finni.pickers.fzf_lua").project_picker()
+<
+
+
+                                                         *finni.pickers.fzf_lua*
+`finni.pickers.fzf_lua` (Module) ~
+
+setup({opts}, {register})                        *finni.pickers.fzf_lua.setup()*
+    Override picker defaults and register extensions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Defaults for future calls.
+      • {register}? `boolean`
+          Force registering extensions to be able to launch pickers via the
+          `FzfLua` Ex command. Note: Loads `fzf-lua`.
+
+manual_picker({opts})                    *finni.pickers.fzf_lua.manual_picker()*
+    Load or delete existing manual sessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_all_picker({opts})                *finni.pickers.fzf_lua.auto_all_picker()*
+    Load or delete existing autosessions spanning all projects.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_picker({opts}, {project_name})        *finni.pickers.fzf_lua.auto_picker()*
+    Load or delete existing autosessions in specific project only.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+      • {project_name}? `string`
+          List autosessions from this project. Defaults to current one.
+
+project_picker({opts})                  *finni.pickers.fzf_lua.project_picker()*
+    Inspect or delete existing projects. Select project to manage/load its
+    autosessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+}}}
+
+                                                 *finni-usage-pickers-mini-pick*
+`mini.pick` ~
+{{{
+```lua – Pick manual sessions require("finni.pickers.mini_pick").manual_picker() – Pick autosessions, spanning all known projects require("finni.pickers.mini_pick").auto_all_picker() – Pick autosessions in the active project require("finni.pickers.mini_pick").auto_picker() – Pick known projects require("finni.pickers.mini_pick").project_picker()
+
+```
+
+                                                       *finni.pickers.mini_pick*
+`finni.pickers.mini_pick` (Module) ~
+
+setup({opts}, {register})                      *finni.pickers.mini_pick.setup()*
+    Override picker defaults and register extensions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Defaults for future calls.
+      • {register}? `boolean`
+          Force registering extensions to be able to launch pickers via the
+          `Pick` Ex command. Note: Loads `mini.pick`.
+
+manual_picker({opts})                  *finni.pickers.mini_pick.manual_picker()*
+    Load or delete existing manual sessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_all_picker({opts})              *finni.pickers.mini_pick.auto_all_picker()*
+    Load or delete existing autosessions spanning all projects.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_picker({opts}, {project_name})      *finni.pickers.mini_pick.auto_picker()*
+    Load or delete existing autosessions in specific project only.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+      • {project_name}? `string`
+          List autosessions from this project. Defaults to current one.
+
+project_picker({opts})                *finni.pickers.mini_pick.project_picker()*
+    Inspect or delete existing projects. Select project to manage/load its
+    autosessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+}}}
+
+                                            *finni-usage-pickers-telescope-nvim*
+`telescope.nvim` ~
+{{{
+>lua
+    -- Pick manual sessions
+    require("finni.pickers.telescope").manual_picker()
+    -- Pick autosessions, spanning all known projects
+    require("finni.pickers.telescope").auto_all_picker()
+    -- Pick autosessions in the active project
+    require("finni.pickers.telescope").auto_picker()
+    -- Pick known projects
+    require("finni.pickers.telescope").project_picker()
+<
+Note: You can explicitly register the `finni` extension in Telescope’s
+options:
+
+>lua
+    require("telescope").setup({
+      -- ...
+      extensions = {
+        -- ...
+        finni = {}
+      }
+    })
+<
+
+
+                                                       *finni.pickers.telescope*
+`finni.pickers.telescope` (Module) ~
+
+setup({opts})                                  *finni.pickers.telescope.setup()*
+    Override picker defaults
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Defaults for future calls.
+
+manual_picker({opts})                  *finni.pickers.telescope.manual_picker()*
+    Load or delete existing manual sessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_all_picker({opts})              *finni.pickers.telescope.auto_all_picker()*
+    Load or delete existing autosessions spanning all projects.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+
+auto_picker({opts}, {project_name})      *finni.pickers.telescope.auto_picker()*
+    Load or delete existing autosessions in specific project only.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+      • {project_name}? `string`
+          List autosessions from this project. Defaults to current one.
+
+project_picker({opts})                *finni.pickers.telescope.project_picker()*
+    Inspect or delete existing projects. Select project to manage/load its
+    autosessions.
+
+    Parameters: ~
+      • {opts}? `Partial<`|finni.pickers.PickerConfig|`>`
+          Override Finni-specific and picker-specific options.
+}}}
 
 
 ==============================================================================
@@ -1202,6 +1503,27 @@ delete({name}, {opts})                                  *finni.session.delete()*
                                                                     *finni.auto*
 `finni.auto` (MODULE) ~
 
+explicit_ctx({session}, {project}, {opts})           *finni.auto.explicit_ctx()*
+    Get the autosession configuration for an explicit project/session
+    name pair. Note: Can fail if a directory can map to multiple sessions
+    (e.g. with Git branches) and its current state does not correspond
+    to the session.
+
+    Parameters: ~
+      • {session} `string`
+          Name of the session
+      • {project}? `string`
+          Name of the project. If unspecified, defaults to current one
+      • {opts}? |finni.SideEffects.SilenceErrors|
+          Table fields:{{{
+          • {silence_errors}? `boolean`
+              Don’t error during this operation
+}}}
+
+
+    Returns: ~
+        |finni.auto.AutosessionContext|`?`
+
 save({opts})                                                 *finni.auto.save()*
     Save the currently active autosession.
 
@@ -1240,6 +1562,108 @@ load({autosession}, {opts})                                  *finni.auto.load()*
     Parameters: ~
       • {autosession}? `(`|finni.auto.AutosessionContext|`|string)`
           The autosession table as rendered by `get_ctx` or cwd to pass to it
+      • {opts}? |finni.auto.LoadOpts|
+          Table fields:{{{
+          • {autosave_enabled}? `boolean`
+              When this session is attached, automatically save it in
+              intervals. Defaults to false.
+          • {autosave_interval}? `integer`
+              Seconds between autosaves of this session, if enabled. Defaults
+              to 60.
+          • {autosave_notify}? `boolean`
+              Trigger a notification when autosaving this session. Defaults
+              to true.
+          • {on_attach}? |finni.core.Session.AttachHook|
+              A function that’s called when attaching to this session.
+              No global default.
+          • {on_detach}? |finni.core.Session.DetachHook|
+              A function that’s called when detaching from this session.
+              No global default.
+          • {options}? `string[]`
+              Save and restore these Neovim (global|buffer|tab|window)
+              options.
+          • {buf_filter}? |finni.BufFilter|
+              Function that decides whether a buffer should be included in
+              a snapshot.
+          • {tab_buf_filter}? |finni.TabBufFilter|
+              Function that decides whether a buffer should be included in a
+              tab-scoped snapshot. `buf_filter` is called first, this is to
+              refine acceptable buffers only.
+          • {modified}? `(boolean|"auto")`
+              Save/load modified buffers and their undo history. If set to
+              `auto` (default), does not save, but still restores modified
+              buffers.
+          • {jumps}? `boolean`
+              Save/load window-specific jumplists, including current position
+              (yes, for {all windows}, not just the active one like with
+              ShaDa). If set to `auto` (default), does not save, but still
+              restores saved jumplists.
+          • {changelist}? `boolean`
+              Save/load buffer-specific changelist (all buffers) and
+              changelist position (visible buffers only).
+
+              {Important}: Enabling this causes
+              {buffer-local marks to be cleared} during restoration.
+              Consider tracking `local_marks` in addition to this.
+          • {global_marks}? `boolean`
+              Save/load global marks (A-Z, not 0-9 currently).
+
+              _Only in global sessions._
+          • {local_marks}? `boolean`
+              Save/load buffer-specific (local) marks.
+
+              {Note}: Enable this if you track the `changelist`.
+          • {search_history}? `(integer|boolean)`
+              Maximum number of search history items to persist. Defaults to
+              false. If set to `true`, maps to the 'history' option.
+
+              _Only in global sessions._
+          • {command_history}? `(integer|boolean)`
+              Maximum number of command history items to persist. Defaults to
+              false. If set to `true`, maps to the 'history' option.
+
+              _Only in global sessions._
+          • {input_history}? `(integer|boolean)`
+              Maximum number of input history items to persist. Defaults to
+              false. If set to `true`, maps to the 'history' option.
+
+              _Only in global sessions._
+          • {expr_history}? `boolean`
+              Persist expression history. Defaults to false. {Note}: Cannot
+              set limit (currently), no direct support by neovim.
+
+              _Only in global sessions._
+          • {debug_history}? `boolean`
+              Persist debug history. Defaults to false. {Note}: Cannot set
+              limit (currently), no direct support by neovim.
+
+              _Only in global sessions._
+          • {meta}? `table`
+              External data remembered in association with this session.
+              Useful to build on top of the core API.
+          • {attach}? `boolean`
+              Attach to/stay attached to session after operation
+          • {save}? `boolean`
+              Save/override autosave config for affected sessions before
+              the operation
+          • {reset}? `(boolean|"auto")`
+              When detaching a session in the process, unload associated
+              resources/reset everything during the operation when restoring
+              a snapshot. `auto` resets only for global sessions.
+          • {silence_errors}? `boolean`
+              Don’t error during this operation
+}}}
+
+switch({session}, {project}, {opts})                       *finni.auto.switch()*
+    Load an existing autosession by project name and session name. Note: This
+    can fail, e.g. when an autosession is associated with a git branch and
+    the worktree has checked out a different one.
+
+    Parameters: ~
+      • {session} `string`
+          Name of the session to load
+      • {project}? `string`
+          Name of the project. If unspecified, defaults to current one
       • {opts}? |finni.auto.LoadOpts|
           Table fields:{{{
           • {autosave_enabled}? `boolean`
@@ -1442,6 +1866,23 @@ stop()                                                       *finni.auto.stop()*
     detach. Keep buffers/windows/tabs etc. by default. 2. In any case, stop
     monitoring for directory or branch changes.
 
+delete({session}, {project}, {opts})                       *finni.auto.delete()*
+    Delete a specific autosession.
+
+    Parameters: ~
+      • {session} `string`
+          Session to delete
+      • {project}? `string`
+          Project name of session to delete. If unspecified, defaults to
+          current one.
+      • {opts}? `(`|finni.SideEffects.Notify|` & `|finni.SideEffects.SilenceErrors|`)`
+          Table fields:{{{
+          • {notify}? `boolean`
+              Notify on success
+          • {silence_errors}? `boolean`
+              Don’t error during this operation
+}}}
+
 reset({opts})                                               *finni.auto.reset()*
     Delete the currently active autosession. Close {everything}. Attempt to
     start a new autosession (optionally).
@@ -1466,6 +1907,12 @@ reset({opts})                                               *finni.auto.reset()*
               to true.
 }}}
 
+current_project()                                 *finni.auto.current_project()*
+    Get the name of the currently active project.
+
+    Returns: ~
+        `string?`
+
 reset_project({opts})                               *finni.auto.reset_project()*
     Remove all autosessions associated with a project. If the target is the
     active project, reset current session as well and close {everything}.
@@ -1473,6 +1920,8 @@ reset_project({opts})                               *finni.auto.reset_project()*
     Parameters: ~
       • {opts}? |finni.auto.ResetProjectOpts|
           Table fields:{{{
+          • {notify}? `boolean`
+              Notify on success
           • {name}? `string`
               Specify the project to reset. If unspecified, resets active
               project, if available.
@@ -1506,6 +1955,10 @@ list({opts})                                                 *finni.auto.list()*
 list_projects({opts})                               *finni.auto.list_projects()*
     List all known projects.
 
+    Overloads: ~
+      • `fun() -> string[]`
+      • `fun(opts: { with_sessions: true }) -> table<string,string[]>`
+
     Parameters: ~
       • {opts}? |finni.auto.ListProjectOpts|
           Table fields:{{{
@@ -1516,7 +1969,7 @@ list_projects({opts})                               *finni.auto.list_projects()*
 
 
     Returns: ~
-        `string[]`
+        `(string[]|table<string,string[]>)`
 
 migrate_projects({opts})                         *finni.auto.migrate_projects()*
     Dev helper currently (beware: unstable/inefficient). When changing the
@@ -2108,6 +2561,8 @@ Type Reference                                            *finni-type-reference*
                                                    *finni.auto.ResetProjectOpts*
 `finni.auto.ResetProjectOpts` (CLASS) ~
     Fields: ~
+      • {notify}? `boolean`
+          Notify on success
       • {name}? `string`
           Specify the project to reset. If unspecified, resets active project,
           if available.
@@ -4146,6 +4601,25 @@ PendingSession:delete({opts})               *finni.core.PendingSession:delete()*
           Absolute path to the file the log call originated from
       • {src_line} `integer`
           Line in `src_path` the log call originated from
+
+                                              *finni.pickers.PickerRawOverrides*
+`finni.pickers.PickerRawOverrides` (CLASS) ~
+    Fields: ~
+      • {default} `table`
+          Override any (picker plugin-specific) options passed to all picker
+          types.
+      • {manual} `table`
+          Override any (picker plugin-specific) options passed to the manual
+          session picker.
+      • {auto} `table`
+          Override any (picker plugin-specific) options passed to the
+          autosession picker.
+      • {auto_all} `table`
+          Override any (picker plugin-specific) options passed to the global
+          autosession picker.
+      • {project} `table`
+          Override any (picker plugin-specific) options passed to the project
+          autosession picker.
 
                                                       *finni.session.DeleteOpts*
 `finni.session.DeleteOpts` (ALIAS) ~

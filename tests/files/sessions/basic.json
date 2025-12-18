@@ -1,0 +1,101 @@
+{
+  "global": {
+    "options": {
+      "cmdheight": 1
+    },
+    "width": 72,
+    "cwd": "${PROJECT}",
+    "height": 63
+  },
+  "tabs": [
+    {
+      "options": {
+        "cmdheight": 1
+      },
+      "current": true,
+      "wins": [
+        "leaf",
+        {
+          "cursor": [
+            4,
+            7
+          ],
+          "height": 62,
+          "old_winid": 1000,
+          "options": {
+            "diff": false,
+            "winfixwidth": false,
+            "previewwindow": false,
+            "winfixheight": false,
+            "scrollbind": false
+          },
+          "width": 72,
+          "bufuuid": "e6254d08-3f11-43ec-868f-fc5644490e19",
+          "view": {
+            "col": 7,
+            "lnum": 4,
+            "topline": 1,
+            "topfill": 0,
+            "leftcol": 0,
+            "skipcol": 0,
+            "curswant": 7,
+            "coladd": 0
+          },
+          "current": true,
+          "alt": 2,
+          "bufname": "${PROJECT}/README.md",
+          "jumps": false
+        }
+      ],
+      "cwd": false
+    }
+  ],
+  "buffers": [
+    {
+      "loaded": true,
+      "name": "${PROJECT}/README.md",
+      "changelist": false,
+      "options": {
+        "buflisted": true,
+        "readonly": false,
+        "filetype": "markdown",
+        "modifiable": true,
+        "binary": false,
+        "bufhidden": ""
+      },
+      "in_win": true,
+      "last_pos": [
+        4,
+        7
+      ],
+      "marks": false,
+      "uuid": "e6254d08-3f11-43ec-868f-fc5644490e19"
+    },
+    {
+      "loaded": true,
+      "name": "${PROJECT}/foobar.txt",
+      "changelist": false,
+      "options": {
+        "buflisted": true,
+        "readonly": false,
+        "filetype": "text",
+        "modifiable": true,
+        "binary": false,
+        "bufhidden": ""
+      },
+      "in_win": false,
+      "last_pos": [
+        2,
+        2
+      ],
+      "marks": false,
+      "uuid": "2d2c5e99-beab-46c1-8435-8748940d2d42"
+    }
+  ],
+  "buflist": [
+    "${PROJECT}/README.md",
+    "${PROJECT}/foobar.txt"
+  ],
+  "quickfix": [],
+  "tab_scoped": false
+}

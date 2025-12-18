@@ -20,11 +20,18 @@ local init_file = ".test/nvim_init.lua"
 --- Proxy for running module functions on child.
 ---@class ModuleProxy<Module>: Module
 ---@field _mod `Module` Name of the module to proxy
----@field _child MiniTest.child Child instance to run against
+---@field _child Child Child instance to run against
+---@field _async boolean Don't wait for the call to finish. Return values are dropped!
 local Proxy = {}
 
 function Proxy:__index(k)
   return function(...)
+    if rawget(self, "_async") then
+      self._child.lua_func_async(function(mod, name, ...)
+        require(mod)[name](...)
+      end, self._mod, k, ...)
+      return
+    end
     local ret = self._child.lua_func(function(mod, name, ...)
       return require(mod)[name](...)
     end, self._mod, k, ...)
@@ -271,10 +278,13 @@ local function new_child(init_opts)
   ---@generic Module
   ---@param mod finni.`Module` Module name, relative to `finni.`
   ---@return Module module Proxy for running module functions on child
-  child.mod = function(mod)
+  child.mod = function(mod, async)
     -- NOTE: This works in EmmyLua because each module has a type named after its import path.
     --       ModuleProxy<Module> class works for type checking, but breaks goto definition and proper hovers.
-    return setmetatable({ _child = child, _mod = "finni." .. mod }, Proxy)
+    return setmetatable(
+      { _child = child, _mod = "finni." .. mod, _async = async and true or false },
+      Proxy
+    )
   end
 
   --- Ensure the passed function is executed during initialization with the passed paramters.
@@ -462,6 +472,88 @@ local function new_child(init_opts)
     end
     return wrapped_stop(...)
   end
+
+  --- Run a lua function without waiting for it to return (lua_notify for lua_func).
+  ---@generic Args
+  ---@param f fun(...: Args...)
+  ---@param ... Args...
+  child.lua_func_async = function(f, ...)
+    return child.lua_notify(
+      "local f = ...; return assert(loadstring(f))(select(2, ...))",
+      { string.dump(f), ... }
+    )
+  end
+
+  --- Get the text on the child's screen as a string.
+  ---@return string
+  child.get_screentext = function()
+    local screenshot = child.get_screenshot()
+    return table.concat(
+      vim
+        .iter(screenshot.text)
+        :map(function(cols)
+          return table.concat(cols, "")
+        end)
+        :totable(),
+      "\n"
+    )
+  end
+
+  --- Build a function that checks for the presence/absence
+  --- of patterns on the child's screen. Each vararg is AND'ed,
+  --- if a single argument is a list of patterns, these are OR'd:
+  ---   (foo, {bar, baz}) => foo and (bar or baz)
+  ---@param should_match boolean
+  ---@return fun(...: string|string[]): boolean
+  local function check_screen(should_match)
+    ---@param ... string|string[]
+    ---@return boolean
+    return function(...)
+      local all_ptrns = { ... }
+      local _ok = pcall(child.wait, function()
+        local text = child.get_screentext()
+        return vim.iter(all_ptrns):all(function(any_ptrns)
+          return vim.iter(type(any_ptrns) ~= "table" and { any_ptrns } or any_ptrns):any(function(p)
+            return (text:find(p) and true or false) == should_match
+          end)
+        end)
+      end, nil, "foo")
+      return _ok
+    end
+  end
+
+  ---@param ... string|string[]
+  ---@return string
+  local function check_screen_msg(...)
+    local all_ptrns = { ... }
+    return ("Patterns:\n    %s\n\nScreen:\n%s"):format(
+      table.concat(
+        vim
+          .iter(all_ptrns)
+          :map(function(any_ptrns)
+            return "Any of: "
+              .. table.concat(
+                vim
+                  .iter(type(any_ptrns) ~= "table" and { any_ptrns } or any_ptrns)
+                  :map(function(p)
+                    return ("`%s`"):format(p)
+                  end)
+                  :totable(),
+                ", "
+              )
+          end)
+          :totable(),
+        "\n  + "
+      ),
+      child.get_screentext()
+    )
+  end
+
+  child.screen_contains =
+    MiniTest.new_expectation("screen contains", check_screen(true), check_screen_msg)
+  child.screen_misses =
+    MiniTest.new_expectation("screen misses", check_screen(false), check_screen_msg)
+
   return child
 end
 
@@ -470,17 +562,18 @@ end
 ---   setup: Whether to call `finni.config.setup()` after start/init func. Defaults to true.
 ---   config: Finni config to set
 ---   init: Tuple of function and variable number of arguments to call during initialization.
+---@param set_opts? table Override default options passed to `MiniTest.new_set`
 ---@return table test_set A MiniTest test set.
 ---@return Child child Child neovim process instance.
-function M.new_test(init_opts)
+function M.new_test(init_opts, set_opts)
   local child = new_child(init_opts)
 
-  local T = MiniTest.new_set({
+  local T = MiniTest.new_set(vim.tbl_deep_extend("force", {
     hooks = {
       pre_case = child.reset,
       post_once = child.stop,
     },
-  })
+  }, set_opts or {}))
   return T, child
 end
 

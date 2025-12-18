@@ -1,5 +1,7 @@
 -- Add current directory to 'runtimepath' to be able to use 'lua' files
-vim.cmd([[let &rtp.=','.getcwd()]])
+vim.g.finni_root = vim.fn.getcwd()
+vim.opt.rtp:append(vim.g.finni_root)
+-- vim.cmd([[let &rtp.=','.getcwd()]])
 
 vim.o.swapfile = false
 vim.bo.swapfile = false
@@ -8,7 +10,11 @@ vim.bo.swapfile = false
 if #vim.api.nvim_list_uis() == 0 then
   -- Add 'mini.nvim' to 'runtimepath' to be able to use 'mini.test'
   -- Assumed that 'mini.nvim' is stored in 'deps/mini.nvim'
-  vim.cmd("set rtp+=deps/mini.nvim")
+  vim
+    .iter({ "fzf-lua", "mini.nvim", "plenary.nvim", "snacks.nvim", "telescope.nvim", "oil.nvim" })
+    :each(function(dep)
+      vim.opt.rtp:append(vim.fs.joinpath(vim.g.finni_root, "deps", dep))
+    end)
 
   -- Set up 'mini.test'
   require("mini.test").setup()

@@ -22,11 +22,15 @@
     ],
     "library": [
       "$VIMRUNTIME",
+      "./deps/fzf-lua",
       "./deps/gitsigns.nvim",
       "./deps/luv",
       "./deps/mini.nvim",
       "./deps/neogit",
-      "./deps/oil.nvim"
+      "./deps/oil.nvim",
+      "./deps/plenary.nvim",
+      "./deps/snacks.nvim",
+      "./deps/telescope.nvim"
     ]
   }
 }

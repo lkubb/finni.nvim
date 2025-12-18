@@ -97,6 +97,29 @@ local function get_ctx(cwd)
   return spec
 end
 
+--- Get the currently valid autosession context, either from the active
+--- autosession or the one that would be rendered from the current working directory.
+---@return AutosessionContext?
+local function current_ctx()
+  local _, cur = current_autosession()
+  if cur then
+    return cur
+  end
+  return get_ctx(util.auto.cwd())
+end
+
+--- Ensure `project` is specified, either by returning the
+--- value or the default one rendered from active session/cwd.
+--- If nothing yields a value, errors.
+---@return string project_name
+local function project_default()
+  local curctx = current_ctx()
+  if curctx then
+    return curctx.project.name
+  end
+  error("Finni: No project specified, could not derive current one")
+end
+
 --- Get the session object associated with the autosession context.
 ---@param ctx AutosessionContext
 ---@param opts? LoadOpts
@@ -127,6 +150,66 @@ local function get_autosess(ctx, opts)
     expr_history = opts.expr_history,
     debug_history = opts.debug_history,
   })
+end
+
+--- Get the autosession configuration for an explicit project/session name pair.
+--- Note: Can fail if a directory can map to multiple sessions (e.g. with Git branches)
+---       and its current state does not correspond to the session.
+---@param session string Name of the session
+---@param project? string Name of the project. If unspecified, defaults to current one
+---@param opts? finni.SideEffects.SilenceErrors
+---@return AutosessionContext?
+function M.explicit_ctx(session, project, opts)
+  opts = opts or {}
+  local msg = opts.silence_errors and log.debug or log.error
+  if not project then
+    local ok
+    ok, project = pcall(project_default)
+    if not ok then
+      msg(project)
+      return
+    end
+  end
+  local project_dir = util.path.get_autosession_project_dir(project, Config.autosession.dir)
+  if not util.path.exists(project_dir) then
+    msg("Explicit project not found: %s", project)
+    return
+  end
+  local session_file = util.path.get_autosession_file(session, project_dir)
+  if not util.path.exists(session_file) then
+    msg("Explicit session not found: %s", session)
+    return
+  end
+  local data = util.path.load_json_file(session_file) ---@type finni.core.Snapshot
+  local cwd = data.global.cwd
+  local ctx = get_ctx(cwd)
+  if not ctx then
+    msg("Failed to resolve autosession %s in project %s", session, project)
+    return
+  end
+  if ctx.project.name ~= project then
+    -- TODO: Consider moving it if target does not exist?
+    msg(
+      "Failed to resolve %s@%s: Data exists, but associated dir %s resolved to project %s instead",
+      project,
+      session,
+      cwd,
+      ctx.project.name
+    )
+    return
+  end
+  if ctx.name ~= session then
+    msg(
+      "Failed to resolve %s@%s: Data exists, but associated dir %s resolved to session %s instead. "
+        .. "If this is a branch-associated session, ensure you have checked it out.",
+      project,
+      session,
+      cwd,
+      ctx.name
+    )
+    return
+  end
+  return ctx
 end
 
 ---@type fun(autosession: AutosessionContext?)
@@ -254,6 +337,28 @@ function M.load(autosession, opts)
     })
   end
   session = session:attach() -- luacheck: ignore
+end
+
+--- Load an existing autosession by project name and session name.
+--- Note: This can fail, e.g. when an autosession is associated
+---       with a git branch and the worktree has checked out
+---       a different one.
+---@param session string Name of the session to load
+---@param project? string Name of the project. If unspecified, defaults to current one
+---@param opts? LoadOpts
+function M.switch(session, project, opts)
+  -- TODO: If we can safely switch branch, try to do so instead of failing.
+  local ctx = M.explicit_ctx(session, project)
+  if not ctx then
+    -- opts = opts or {}
+    -- (opts.silence_errors and log.debug or log.error)(
+    --   "Could not find requested session/project combination (%s, %s)",
+    --   session,
+    --   project
+    -- )
+    return
+  end
+  return M.load(ctx, opts)
 end
 
 --- If an autosession is active, save it and detach.
@@ -459,12 +564,44 @@ function M.stop()
   M.detach({ reset = false })
 end
 
+--- Delete a specific autosession.
+---@param session string Session to delete
+---@param project? string Project name of session to delete. If unspecified, defaults to current one.
+---@param opts? finni.SideEffects.Notify & finni.SideEffects.SilenceErrors
+function M.delete(session, project, opts)
+  opts = opts or {}
+  project = project or project_default()
+  -- Try to get the context, outcome can depend on the state of the directory.
+  local ctx = M.explicit_ctx(session, project, { silence_errors = true })
+  if ctx then
+    -- Opening nvim in the session's directory yields the correct autosession.
+    -- Autosession might be active, so handle it like reset.
+    return M.reset({ notify = opts.notify, silence_errors = opts.silence_errors, cwd = ctx.root })
+  end
+  -- Fallback: We might be trying to delete a session associated with a
+  -- state that's not reachable at the moment (different or deleted git branch, for example).
+  local project_dir = util.path.get_autosession_project_dir(project, Config.autosession.dir)
+  local session_file, state_dir, context_dir = util.path.get_autosession_paths(session, project_dir)
+
+  if not util.path.exists(session_file) then
+    (opts.silence_errors and log.debug or log.error)(
+      "Failed to delete session %s in project %s: File at %s does not exist",
+      session,
+      project,
+      session_file
+    )
+    return
+  end
+  local sess = Session.create_new(session, session_file, state_dir, context_dir, {})
+  sess:delete({ notify = opts.notify, silence_errors = opts.silence_errors })
+end
+
 --- Delete the currently active autosession. Close **everything**.
 --- Attempt to start a new autosession (optionally).
 ---@param opts? ResetOpts
 function M.reset(opts)
   ---@type ResetOpts
-  opts = vim.tbl_extend("force", { notify = false }, opts or {})
+  opts = opts or {}
   ---@type Session?
   local session
   if opts.cwd then
@@ -494,6 +631,15 @@ function M.reset(opts)
   session:delete({ notify = opts.notify, silence_errors = opts.silence_errors })
   if opts.reload ~= false then
     M.reload()
+  end
+end
+
+--- Get the name of the currently active project.
+---@return string?
+function M.current_project()
+  local curctx = current_ctx()
+  if curctx then
+    return curctx.project.name
   end
 end
 
@@ -541,6 +687,14 @@ function M.reset_project(opts)
 
   util.path.rmdir(project_dir, { recursive = true })
 
+  if opts.notify ~= false then
+    vim.notify(
+      ("Reset project %s (dir: %s)"):format(name, project_dir),
+      vim.log.levels.INFO,
+      Config.log.notify_opts
+    )
+  end
+
   if resetting_active then
     M.reload()
   end
@@ -584,8 +738,10 @@ function M.list(opts)
 end
 
 --- List all known projects.
+---@overload fun(): string[]
+---@overload fun(opts: {with_sessions: true}): table<string, string[]>
 ---@param opts? ListProjectOpts
----@return string[]
+---@return string[]|table<string, string[]>
 function M.list_projects(opts)
   opts = opts or {}
   local projects_dir = util.path.get_stdpath_filename("data", Config.autosession.dir)
