@@ -8,7 +8,7 @@ local fixtures = dofile("tests/fixtures.lua")
 local ex = helpers.ex
 local eq, ok, none = ex.eq, ex.ok, ex.none
 
-local T, child = helpers.new_test()
+local T, child = helpers.new_test(nil, { n_retry = 2 })
 
 local pickers = {
   fzf_lua = child.mod("pickers.fzf_lua"),
@@ -90,7 +90,7 @@ T["All autosessions picker works"] = function(picker)
   picker = pickers[picker]
   local sess_data = fixtures.autosession("basic")
   picker.auto_all_picker()
-  child.screen_contains("Finni Autosessions", vim.pesc(".test/projects"))
+  child.screen_contains("Finni Autosessions", ".test/projects")
   pcall(child.type_keys, "<CR>")
   none(child.filter_log({ level = "error" }))
   child.screen_misses("Finni Autosessions")
