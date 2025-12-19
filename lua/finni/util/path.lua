@@ -272,9 +272,34 @@ end
 ---@param dirname string Path of the directory to delete
 ---@param opts {recursive?: boolean} Optionally delete recursively
 function M.rmdir(dirname, opts)
-  if M.exists(dirname) then
+  local exists, stat = M.exists(dirname)
+  if exists then
     opts = opts or {}
-    vim.fs.rm(dirname, opts)
+    if vim.fn.has("nvim-0.11") > 0 then
+      vim.fs.rm(dirname, opts)
+    else
+      -- polyfill for 0.10
+      local function rm(path, typ)
+        local rm_fn
+        if typ == "directory" then
+          if opts.recursive then
+            for file, ftyp in vim.fs.dir(dirname) do
+              rm(M.join(dirname, file), ftyp)
+            end
+          else
+            error(("%s is a directory"):format(path))
+          end
+          rm_fn = uv.fs_rmdir
+        else
+          rm_fn = uv.fs_unlink
+        end
+        local ret, err, errnm = rm_fn(path)
+        if ret == nil and errnm ~= "ENOENT" then
+          error(err)
+        end
+      end
+      rm(dirname, assert(stat).type)
+    end
     return true
   end
 end
