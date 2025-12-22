@@ -88,7 +88,7 @@ local function get_ctx(cwd)
       util.path.get_session_dir(Config.autosession.dir),
       util.path.escape(spec.project.name)
     )
-  elseif vim.fn.isabsolutepath(spec.project.data_dir) == 0 then
+  elseif not util.path.is_absolute(spec.project.data_dir) then
     spec.project.data_dir =
       util.path.join(util.path.get_session_dir(Config.autosession.dir), spec.project.data_dir)
   end
@@ -776,7 +776,7 @@ function M.migrate_projects(opts)
   opts.dry_run = opts.dry_run ~= false
   if not opts.old_root or opts.old_root == "" then
     opts.old_root = util.path.get_session_dir(Config.autosession.dir)
-  elseif vim.fn.isabsolutepath(opts.old_root) == 0 then
+  elseif not util.path.is_absolute(opts.old_root) then
     opts.old_root = util.path.get_session_dir(opts.old_root)
   end
 
@@ -899,7 +899,7 @@ function M.migrate_projects(opts)
         local save_contents =
           util.path.load_json_file(util.path.join(project_dir, save_files[1][2]))
         local cwd = save_contents.global.cwd
-        if not cwd or cwd == "" or vim.fn.isabsolutepath(cwd) == 0 then
+        if not cwd or cwd == "" or not util.path.is_absolute(cwd) then
           rm(project_dir, "broken", cwd)
         elseif util.path.exists(cwd) then
           local ctx = get_ctx(cwd)

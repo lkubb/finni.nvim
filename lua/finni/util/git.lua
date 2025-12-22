@@ -1,4 +1,5 @@
 ---@class finni.util.git
+---@overload fun(cmd: string[], opts?: finni.util.GitCmdOpts): string[], string?, integer
 local M = {}
 
 --- Influence how the `git` binary is called
@@ -221,5 +222,11 @@ function M.find_git_dir(path)
   local root = M.find_workspace_root(assert(res[1]))
   return root
 end
+
+M = setmetatable(M, {
+  __call = function(_, cmd, opts)
+    return git_cmd(cmd, opts)
+  end,
+})
 
 return M
