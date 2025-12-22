@@ -10,7 +10,7 @@ local eq, ne, ok, no, match, none, some =
   helpers.ex.none,
   helpers.ex.some
 
-local T, child = helpers.new_test()
+local T, child = helpers.new_test({ setup = true })
 
 local snapshot = child.mod("core.snapshot")
 
@@ -62,7 +62,7 @@ T["Basic snapshot works"] = function()
   eq(child.get_snapshot(), ss)
 
   -- Also test that restoration after restart reproduces the same state
-  child.reset()
+  child.restart()
   snapshot.restore(ss)
   eq(child.get_snapshot(), ss)
   none(child.filter_log({ level = "error" }))

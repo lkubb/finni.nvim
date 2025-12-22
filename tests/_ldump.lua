@@ -2,6 +2,8 @@
 --- Used during testing for dumping initialization and mock funcs.
 
 --- Source: https://github.com/girvel/ldump/blob/d7d16dcf115e3b77121586dfce461ec0df749fc4/init.lua
+---   + custom patch: Add `dofile` support
+---   + custom patch: Sort keys to make output more deterministic
 
 ---@diagnostic disable
 
@@ -103,6 +105,15 @@ ldump.preserve_modules = false
 --- @type string
 ldump.require_path = select(1, ...)
 
+-- PATCH: Use dofile + absolute path instead of require to avoid having to put this file into a `lua` dir.
+if vim then
+  --- `dofile`-style path to the ldump module, used in deserialization.
+  --- Inferred from the file used for deserialization, can be changed.
+  --- @type string
+  ldump.dofile_path = vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":p")
+end
+-- ENDPATCH
+
 -- internal implementation --
 
 -- NOTICE: lua5.1-compatible; does not support goto
@@ -128,11 +139,12 @@ ldump_mt.__call = function(self, x)
     error(result, 2)
   end
 
+  -- PATCH: Use dofile + absolute path instead of require to avoid having to put this file into a `lua` dir.
   local base_code = [[
 local cache = {}
 local ldump
 if require then
-  ldump = require("%s")
+  ldump = %s("%s")
 else
   ldump = {
     ignore_upvalue_size = function() end
@@ -141,7 +153,12 @@ end
 return %s
   ]]
 
-  return base_code:format(self.require_path, result)
+  return base_code:format(
+    self.dofile_path and "dofile" or "require",
+    self.dofile_path or self.require_path,
+    result
+  )
+  -- ENDPATCH
 end
 
 allowed_big_upvalues = {}
@@ -149,6 +166,24 @@ allowed_big_upvalues = {}
 local to_expression = function(statement)
   return ("(function()\n%s\nend)()"):format(statement)
 end
+
+-- PATCH: Make output more deterministic to avoid having to rewrite it
+local sorted_pairs = function(tbl, comp)
+  local keys = {}
+  for key, _ in pairs(tbl) do
+    table.insert(keys, key)
+  end
+  table.sort(keys, comp)
+  local i = 0
+  local n = #keys
+  return function()
+    i = i + 1
+    if i <= n then
+      return keys[i], tbl[keys[i]]
+    end
+  end
+end
+-- ENDPATCH
 
 local build_table = function(x, cache, upvalue_id_cache)
   local mt = getmetatable(x)
@@ -160,7 +195,7 @@ local build_table = function(x, cache, upvalue_id_cache)
   result[1] = "local _ = {}"
   result[2] = ("cache[%s] = _"):format(cache.size)
 
-  for k, v in pairs(x) do
+  for k, v in sorted_pairs(x) do -- PATCH: Make output more deterministic to avoid having to rewrite it
     table.insert(stack, tostring(k))
     table.insert(
       result,
@@ -353,7 +388,7 @@ handle_primitive = function(x, cache, upvalue_id_cache)
 end
 
 cache_packages = function()
-  for k, v in pairs(package.loaded) do
+  for k, v in sorted_pairs(package.loaded) do -- PATCH: Make output more deterministic to avoid having to rewrite it
     package_cache[v] = k
   end
 end

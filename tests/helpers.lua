@@ -249,25 +249,53 @@ local default_config = {
 }
 
 ---@class Child.InitOpts
+---@field nvim_executable? string Nvim executable path
+---@field connection_timeout? integer Timeout in milliseconds. Defaults to 5000.
 ---@field setup? boolean #
----   Call `finni.core.setup()` after `init` (if `init` is set),
----   or after neovim has finished starting (if `init` is unset).
----   Defaults to true.
+---   Call `finni.config.setup()` during initialization.
+---   Defaults to false.
 ---@field init? [fun(...), any...] #
 ---   Tuple of function and variable number of arguments to pass to this function during Neovim initialization.
----   `setup` is called after this function, if not disabled.
+---   `setup` is called after this function, if enabled.
 ---@field config? finni.UserConfig #
 ---   Set the configuration used by this child instance.
+---@field autosession? boolean Enable autosessions
+---@field job_opts? Child.InitOpts.job_opts #
+---   Pass options to `vim.fn.jobstart` for child neovim instance
+
+---@class Child.InitOpts.job_opts
+---@field clear_env? boolean
+---@field cwd? string
+---@field detach? boolean
+---@field env? table<string, string>
+---@field height? number
+---@field on_exit? fun()
+---@field on_stdout? fun()
+---@field on_stderr? fun()
+---@field overlapped? boolean
+---@field pty? boolean
+---@field rpc? boolean
+---@field stderr_buffered? boolean
+---@field stdout_buffered? boolean
+---@field stdin? string
+---@field term? boolean
+---@field width? integer
 
 --- Setup a new integration test with child neovim instance.
 ---@param init_opts? Child.InitOpts #
----   setup: Whether to call `finni.config.setup()` after start/init func. Defaults to true.
+---   setup: Whether to call `finni.config.setup()` during initialization. Defaults to false.
 ---   config: Finni config to set
 ---   init: Tuple of function and variable number of arguments to call during initialization.
+---         The function should not have upvalues (use args to pass relevant parameters instead).
+---         Essentially allows arbitrary logic in `minimal_init`.
+---   job_opts: Pass options to `vim.fn.jobstart` for child neovim instance
 ---@return Child child Child neovim process instance.
 local function new_child(init_opts)
-  init_opts = init_opts or {} ---@type Child.InitOpts
-  init_opts.config = vim.tbl_deep_extend("force", default_config, init_opts.config or {})
+  init_opts = init_opts or {}
+  init_opts.config = vim.tbl_deep_extend("force", default_config, init_opts.config or {}) --[[@as finni.UserConfig]]
+
+  local start_args ---@type string[]
+  local start_opts = init_opts ---@type Child.InitOpts
 
   ---@class Child: MiniTest.child
   ---@field init? string Serialized function that's run during Neovim initialization
@@ -287,79 +315,73 @@ local function new_child(init_opts)
     )
   end
 
-  --- Ensure the passed function is executed during initialization with the passed paramters.
-  --- Essentially allows arbitrary logic in `minimal_init`.
-  ---@generic Args
-  ---@param func? fun(...: Args...) #
-  ---   Function to run during initialization. Leave unset to reset.
-  ---   The function should not have upvalues (use args to pass relevant parameters instead).
-  ---@param ... Args... args Variadic arguments to pass to the function.
-  child.set_init = function(func, ...)
-    if not func then
-      child.init, child._init_stat = nil, nil
-      return
-    end
-    local args = vim.deepcopy(vim.F.pack_len(...))
-    local do_setup = init_opts.setup
-    local config = do_setup ~= false and init_opts.config or nil
-    local init = function()
-      -- This function has several upvalues defined in this function. They are serialized with it.
-      func(vim.F.unpack_len(args))
-      if do_setup ~= false then
-        -- Could pass it in the .setup() call as well, but this is how users should do it.
-        vim.g.finni_config = config
-        require("finni.config").setup()
-      end
-    end
-    child.init = ldump(init)
-    child._init_stat = nil
-  end
-
-  if init_opts.init then
-    child.set_init(init_opts.init[1], unpack(init_opts.init, 2))
-  end
-
   -- Need to wrap the inbuilt `start` function to ensure our init function is synced
   -- before starting the child neovim.
   local wrapped_start = child.start
-  child.start = function(...)
-    if not child.init then
-      path.delete_file(init_file)
-      assert(not path.exists(init_file), "Failed to remove init file!")
-    else
-      local rewrite
-      if child._init_stat then
-        -- Check if we need to recreate the file by comparing stats
-        local stat = vim.uv.fs_stat(init_file)
-        if not stat then
-          rewrite = true
-        else
-          stat.atime = nil
-          rewrite = not vim.deep_equal(stat, child._init_stat)
+  child.start = function(args, opts)
+    args = args or {} ---@type string[]
+    opts = opts or {} ---@type Child.InitOpts
+    opts.config = vim.tbl_deep_extend("force", default_config, opts.config or {})
+
+    start_args, start_opts = args, opts
+
+    local function build_init()
+      local init_func = opts.init and opts.init[1]
+      local init_func_args = opts.init and { unpack(opts.init, 2) }
+      local autosession = opts.autosession
+      local config = opts.config
+      local do_setup = opts.setup
+
+      local init = function()
+        vim.g.finni_autosession = autosession
+        -- Could pass it in the .setup() call as well, but this is how users should do it.
+        vim.g.finni_config = config
+        if init_func then
+          -- This function has several upvalues defined in this function. They are serialized with it.
+          init_func(unpack(init_func_args))
         end
-      else
-        rewrite = true
+        if do_setup then
+          require("finni.config").setup()
+        end
       end
-      if rewrite then
-        path.write_file(init_file, child.init)
-        assert(path.exists(init_file), "Failed to create init file!")
-        child._init_stat = assert(vim.uv.fs_stat(init_file))
-        child._init_stat.atime = nil
-      end
+      child.init = ldump(init)
+      child._init_hash = vim.fn.sha256(child.init)
     end
-    return wrapped_start(...)
+
+    build_init()
+    ---@cast child.init string
+    ---@cast child._init_hash string
+
+    if path.sha256(init_file) ~= child._init_hash then
+      path.write_file(init_file, child.init)
+      assert(path.exists(init_file), "Failed to create init file!")
+    end
+
+    local orig_jobstart = vim.fn.jobstart
+    vim.fn.jobstart = function(cmd, job_opts)
+      ---@type table?
+      local pass_opts = vim.tbl_deep_extend(
+        "force",
+        { env = { FINNI_TESTING = "true" } },
+        opts.job_opts or {},
+        job_opts or {}
+      )
+      ---@diagnostic disable-next-line: param-type-mismatch
+      if vim.tbl_isempty(pass_opts) then
+        return orig_jobstart(cmd)
+      end
+      return orig_jobstart(cmd, pass_opts)
+    end
+    local init_path = path.join(assert(vim.uv.cwd()), "scripts", "minimal_init.lua")
+    wrapped_start(vim.list_extend(args, { "-u", init_path }), opts)
+    vim.fn.jobstart = orig_jobstart
   end
 
-  --- Restart the child process and ensure Finni has been setup (needed for tests of `core` modules,
-  --- which don't do that automatically).
-  child.reset = function()
-    child.restart({ "-u", "scripts/minimal_init.lua" })
-    if not child.init and init_opts.setup ~= false then
-      child.lua_func(function(config)
-        local c = assert(loadstring(config))()
-        require("finni.config").setup(c)
-      end, ldump(init_opts.config))
-    end
+  local wrapped_restart = child.restart
+  child.restart = function(args, opts)
+    args = args or start_args
+    opts = vim.tbl_deep_extend("force", start_opts or {}, opts or {})
+    return wrapped_restart(args, opts)
   end
 
   --- Helper to create a Finni snapshot from the child's current state with helper methods.
@@ -451,7 +473,7 @@ local function new_child(init_opts)
     local new_init_opts = vim.tbl_deep_extend("force", init_opts, ovrr_opts) ---@type Child.InitOpts
     local newborn = new_child(new_init_opts)
     if inner then
-      newborn.reset()
+      newborn.restart()
       local rets = vim.F.pack_len(inner(newborn, ...))
       newborn.stop()
       return vim.F.unpack_len(rets)
@@ -459,7 +481,7 @@ local function new_child(init_opts)
     return newborn,
       MiniTest.new_set({
         hooks = {
-          pre_case = newborn.reset,
+          pre_case = newborn.restart,
           post_once = newborn.stop,
         },
       })
@@ -517,7 +539,7 @@ local function new_child(init_opts)
             return (text:find(p) and true or false) == should_match
           end)
         end)
-      end, nil, "foo")
+      end, nil, "Text not found")
       return _ok
     end
   end
@@ -557,12 +579,25 @@ local function new_child(init_opts)
   return child
 end
 
+--- Options for MiniTest.new_set.
+---@class Helpers.set_opts
+---@field hooks? Helpers.set_opts.hooks
+---@field parametrize? [any ...][]
+---@field data? table
+---@field n_retry? integer
+
+---@class Helpers.set_opts.hooks
+---@field pre_once? fun()
+---@field pre_case? fun()
+---@field post_case? fun()
+---@field post_once? fun()
+
 --- Setup a new integration test with child neovim instance.
 ---@param init_opts? Child.InitOpts #
 ---   setup: Whether to call `finni.config.setup()` after start/init func. Defaults to true.
 ---   config: Finni config to set
 ---   init: Tuple of function and variable number of arguments to call during initialization.
----@param set_opts? table Override default options passed to `MiniTest.new_set`
+---@param set_opts? Helpers.set_opts Override default options passed to `MiniTest.new_set`
 ---@return table test_set A MiniTest test set.
 ---@return Child child Child neovim process instance.
 function M.new_test(init_opts, set_opts)
@@ -570,7 +605,7 @@ function M.new_test(init_opts, set_opts)
 
   local T = MiniTest.new_set(vim.tbl_deep_extend("force", {
     hooks = {
-      pre_case = child.reset,
+      pre_case = child.restart,
       post_once = child.stop,
     },
   }, set_opts or {}))
