@@ -86,7 +86,7 @@ if vim.g.finni_autosession then
         get_cwd = vim.g.finni_autosession
       else
         get_cwd = function(ctx)
-          if ctx.is_headless or ctx.is_pager then
+          if (ctx.is_headless and not vim.env.FINNI_TESTING) or ctx.is_pager then
             return false
           end
           return require("finni.util").auto.cwd_init() or false

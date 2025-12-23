@@ -31,6 +31,13 @@ local function copy_recursive(src, dst)
   end
 end
 
+---@param s string
+---@param chars string
+---@return string
+local function rstrip(s, chars)
+  return s:match("^(.-)[" .. chars .. "]*$") or s
+end
+
 ---@class finni.tests.fixtures
 local M = {}
 
@@ -42,20 +49,43 @@ local PROJECTS = ".test/projects"
 ---@param name string Name of the fixture project
 ---@return string project_path Project workdir
 function M.project(name)
-  local src = util.path.join(PROJECTS_SRC, name)
-  local dst = util.path.join(PROJECTS, name)
-  util.path.rmdir(dst, { recursive = true })
-  copy_recursive(src, dst)
-  vim.system({ "git", "init" }, { cwd = dst })
+  local dst = util.path.norm(util.path.join(PROJECTS, name))
+  if util.path.exists(util.path.join(dst, ".git")) then
+    util.git({ "reset", "--hard", "HEAD" }, { cwd = dst })
+    util.git({ "switch", "main" }, { cwd = dst })
+    util.git({ "reset", "--hard", "clean" }, { cwd = dst })
+    util.git({ "clean", "-ffd" }, { cwd = dst })
+  else
+    local src = util.path.join(PROJECTS_SRC, name)
+    util.path.rmdir(dst, { recursive = true })
+    copy_recursive(src, dst)
+    util.git({ "-c", "init.defaultBranch=main", "init" }, { cwd = dst })
+    util.git({ "add", "." }, { cwd = dst })
+    util.git({
+      "-c",
+      "commit.gpgsign=false",
+      "-c",
+      "user.email=finni@te.st",
+      "-c",
+      "user.name=finni-test",
+      "commit",
+      "--no-verify",
+      "-m",
+      "initcomm",
+    }, { cwd = dst })
+    util.git({
+      "-c",
+      "tag.gpgsign=false",
+      "-c",
+      "user.email=finni@te.st",
+      "-c",
+      "user.name=finni-test",
+      "tag",
+      "clean",
+    }, { cwd = dst })
+  end
   uv.sleep(10) -- ensures that this project is recognized correctly (sometimes there's a race condition)
-  return vim.fn.fnamemodify(dst, ":p")
-end
-
----@param s string
----@param chars string
----@return string
-local function rstrip(s, chars)
-  return s:match("^(.-)[" .. chars .. "]*$") or s
+  return rstrip(dst, "/")
 end
 
 --- Copy a fixture project to a temp path and create a manual session for it
@@ -80,7 +110,7 @@ end
 ---@return string project_name Finni project name
 function M.autosession(name)
   local project_dir = M.project(name)
-  local project_name = util.auto.workspace_project_map(project_dir)
+  local project_name = util.auto.workspace_project_map(rstrip(project_dir, "/") .. "/")
   local src = util.path.join(SESSIONS_SRC, name .. ".json")
   local data = vim.json.decode(
     (assert(util.path.read_file(src)):gsub("%$%{PROJECT%}", rstrip(project_dir, "/")))

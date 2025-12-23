@@ -60,6 +60,19 @@ function M.is_subpath(dir, path)
   return string.sub(path, 0, string.len(dir)) == dir
 end
 
+---Check whether a path is absolute.
+---@param path string
+---@return boolean
+function M.is_absolute(path)
+  if vim.fn.has("nvim-0.11") == 1 then
+    return vim.fn.isabsolutepath(path) == 1
+  end
+  if M.is_windows then
+    return path:sub(2, 2) == ":"
+  end
+  return path:sub(1, 1) == "/"
+end
+
 --- Given a path, replace $HOME with ~ if present.
 ---@param path string Path to shorten
 ---@return string shortened_path #
