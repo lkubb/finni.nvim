@@ -14,10 +14,8 @@ local T ---@type table
 local child ---@type finni.tests.Child
 
 T, child = helpers.new_test({
-  init = {
-    function()
-      require("gitsigns").setup()
-    end,
+  setup_plugins = {
+    gitsigns = {},
   },
   job_opts = {
     cwd = project_dir,
