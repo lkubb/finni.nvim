@@ -254,6 +254,7 @@ local default_config = {
 ---@field setup? boolean #
 ---   Call `finni.config.setup()` during initialization.
 ---   Defaults to false.
+---@field setup_plugins? table<string, table> Call `.setup()` on these modules with the passed config
 ---@field init? [fun(...), any...] #
 ---   Tuple of function and variable number of arguments to pass to this function during Neovim initialization.
 ---   `setup` is called after this function, if enabled.
@@ -330,6 +331,7 @@ local function new_child(init_opts)
       local init_func_args = opts.init and { unpack(opts.init, 2) }
       local autosession = opts.autosession
       local config = opts.config
+      local plugins_config = opts.setup_plugins or {}
       local do_setup = opts.setup
 
       local init = function()
@@ -339,6 +341,9 @@ local function new_child(init_opts)
         if init_func then
           -- This function has several upvalues defined in this function. They are serialized with it.
           init_func(unpack(init_func_args))
+        end
+        for mod, conf in pairs(plugins_config) do
+          require(mod).setup(conf)
         end
         if do_setup then
           require("finni.config").setup()

@@ -16,6 +16,7 @@ if #vim.api.nvim_list_uis() == 0 then
       "fzf-lua",
       "gitsigns.nvim",
       "mini.nvim",
+      "neogit",
       "plenary.nvim",
       "snacks.nvim",
       "telescope.nvim",
