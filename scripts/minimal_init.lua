@@ -7,6 +7,9 @@ vim.opt.rtp:append(vim.g.finni_root)
 vim.o.swapfile = false
 vim.bo.swapfile = false
 
+vim.go.splitright = true
+vim.go.splitbelow = true
+
 -- Set up 'mini.test' only when calling headless Neovim (like with `make test`)
 if #vim.api.nvim_list_uis() == 0 then
   -- Add 'mini.nvim' to 'runtimepath' to be able to use 'mini.test'

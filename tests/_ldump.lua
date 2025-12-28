@@ -173,7 +173,19 @@ local sorted_pairs = function(tbl, comp)
   for key, _ in pairs(tbl) do
     table.insert(keys, key)
   end
-  table.sort(keys, comp)
+  table.sort(keys, comp or function(a, b)
+    local type_a, type_b = type(a), type(b)
+    if type_a == type_b then
+      return a < b
+    end
+    if type_a == "number" then
+      return true
+    end
+    if type_b == "number" then
+      return false
+    end
+    return a < b
+  end)
   local i = 0
   local n = #keys
   return function()
