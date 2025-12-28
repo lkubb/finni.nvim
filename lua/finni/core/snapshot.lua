@@ -49,7 +49,8 @@ local function get_global_marks()
       return not mark.mark:find("%d$")
     end)
     :fold({}, function(acc, mark)
-      acc[mark.mark:sub(2, 2)] = { mark.file, mark.pos[2], mark.pos[3] }
+      -- Convert (1, 1) to (1, 0) indexing
+      acc[mark.mark:sub(2, 2)] = { mark.file, mark.pos[2], mark.pos[3] - 1 }
       return acc
     end)
 end
