@@ -765,7 +765,15 @@ end
 local autosave_group
 function M.setup()
   autosave_group = vim.api.nvim_create_augroup("FinniAutosave", { clear = true })
-  -- TODO: Optionally (?) use ExitPre instead to be able to skip unsaved changes dialog when modified=true?
+  -- TODO: Optionally use ExitPre instead to be able to skip unsaved changes dialog when modified=true?
+
+  -- vim.api.nvim_create_autocmd("ExitPre", {
+  --   group = autosave_group,
+  --   callback = function()
+  --     M.detach(nil, "quit", { reset = true })
+  --   end,
+  -- })
+
   vim.api.nvim_create_autocmd("VimLeavePre", {
     group = autosave_group,
     callback = function()
