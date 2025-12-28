@@ -26,7 +26,7 @@ getmetatable(T).opts.parametrize = vim
 
 T["Manual picker works"] = function(picker)
   picker = pickers[picker]
-  local sess_data = fixtures.session("basic")
+  local sess_data = fixtures.session("basic", true)
   picker.manual_picker()
   child.screen_contains("Finni Manual Sessions", "basic")
   -- Other than with fzf_lua (external process), this fails with "E31: No such mapping" for some reason,
@@ -49,7 +49,7 @@ end
 
 T["Manual picker respects call overrides"] = function(picker)
   picker = pickers[picker]
-  local sess_data = fixtures.session("basic")
+  local sess_data = fixtures.session("basic", true)
   local old_sess_dir = vim.fn.fnamemodify(sess_data, ":h")
   local new_sess_dir = util.path.join(vim.fn.fnamemodify(old_sess_dir, ":h"), "foobar")
   MiniTest.finally(function()
@@ -68,7 +68,7 @@ end
 
 T["Manual picker respects default overrides"] = function(picker)
   picker = pickers[picker]
-  local sess_data = fixtures.session("basic")
+  local sess_data = fixtures.session("basic", true)
   local old_sess_dir = vim.fn.fnamemodify(sess_data, ":h")
   local new_sess_dir = util.path.join(vim.fn.fnamemodify(old_sess_dir, ":h"), "foobar")
   MiniTest.finally(function()

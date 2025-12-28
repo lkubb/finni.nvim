@@ -92,13 +92,16 @@ end
 ---@param name string Name of the fixture project
 ---@return string session_path Session data file path
 ---@return string project_path Project workdir
-function M.session(name)
+function M.session(name, clean)
   local project_dir = M.project(name)
   local src = util.path.join(SESSIONS_SRC, name .. ".json")
   local data = vim.json.decode(
     (assert(util.path.read_file(src)):gsub("%$%{PROJECT%}", rstrip(project_dir, "/")))
   )
   local dst = ".test/env/data/nvim/session/" .. name .. ".json"
+  if clean then
+    util.path.rmdir(vim.fn.fnamemodify(dst, ":h"), { recursive = true })
+  end
   util.path.write_json_file(dst, data)
   return vim.fn.fnamemodify(dst, ":p"), project_dir
 end

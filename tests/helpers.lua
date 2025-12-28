@@ -1,6 +1,15 @@
 ---@class finni.tests.helpers
 local M = {}
 
+local H = {}
+H.error = function(msg)
+  error("(mini.test) " .. msg, 0)
+end
+H.error_with_emphasis = function(msg, ...)
+  local lines = { "", H.add_style(msg, "emphasis"), ... }
+  error(table.concat(lines, "\n"), 0)
+end
+
 ---@module "mini.test"
 _G.MiniTest = _G.MiniTest
 
@@ -500,6 +509,38 @@ local function new_child(init_opts)
     return wrapped_stop(...)
   end
 
+  -- Override MiniTest lua_func to be able to pass through arbitrary args
+  local ensure_running = function()
+    if child.is_running() then
+      return
+    end
+    H.error("Child process is not running. Did you call `child.start()`?")
+  end
+
+  local prevent_hanging = function(method)
+    if not child.is_blocked() then
+      return
+    end
+
+    local msg = string.format("Can not use `child.%s` because child process is blocked.", method)
+    H.error_with_emphasis(msg)
+  end
+
+  --- Run a lua function on the child and return its returns.
+  --- Patched, allows to pass mostly arbitrary data. The function to run can reference upvalues.
+  ---@generic Args, Rets
+  ---@param f fun(...: Args...): Rets...
+  ---@param ... Args...
+  ---@return Rets...
+  child.lua_func = function(f, ...)
+    ensure_running()
+    prevent_hanging("lua_func")
+    return child.api.nvim_exec_lua(
+      "local f, args = ...; args = assert(loadstring(args))(); return assert(loadstring(f))()(vim.F.unpack_len(args))",
+      { ldump(f), ldump(vim.F.pack_len(...)) }
+    )
+  end
+
   --- Run a lua function without waiting for it to return (lua_notify for lua_func).
   ---@generic Args
   ---@param f fun(...: Args...)
@@ -524,6 +565,37 @@ local function new_child(init_opts)
         :totable(),
       "\n"
     )
+  end
+
+  --- Get the text of a child's buffer
+  ---@param ref? {pattern?: string, uuid?: string}
+  ---@return string
+  child.get_buftext = function(ref)
+    local bufnr
+    if ref and (ref.pattern or ref.uuid) then
+      local matchit = ref.pattern
+          and function(buf)
+            return child.api.nvim_buf_get_name(buf):find(ref.pattern)
+          end
+        or function(buf)
+          -- child.b[buf] does not work
+          local ok, ctx = pcall(child.api.nvim_buf_get_var, buf or 0, "finni_ctx")
+          return (ok and ctx or {}).uuid == ref.uuid
+        end
+      for _, buf in ipairs(child.api.nvim_list_bufs()) do
+        if matchit(buf) then
+          bufnr = buf
+          break
+        end
+      end
+      if not bufnr then
+        error(("Buffer matching %s not found"):format(vim.inspect(ref)))
+      end
+    else
+      bufnr = 0
+    end
+    local lines = child.api.nvim_buf_get_lines(bufnr or 0, 0, -1, false)
+    return table.concat(lines, "\n")
   end
 
   --- Build a function that checks for the presence/absence
