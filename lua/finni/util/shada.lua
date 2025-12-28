@@ -378,7 +378,14 @@ end
 ---@param opts? ReadOpts
 function Shada:read(opts)
   local temp = self:write()
-  vim.cmd.rshada({ vim.fn.fnameescape(temp), bang = (opts or {}).bang })
+  local inner = function()
+    vim.cmd.rshada({ vim.fn.fnameescape(temp), bang = (opts or {}).bang })
+  end
+  if vim.go.shadafile == "NONE" and vim.fn.has("nvim-0.11") ~= 1 then
+    require("finni.util.opts").with({ shadafile = "" }, inner)
+  else
+    inner()
+  end
   vim.defer_fn(function()
     require("finni.util.path").delete_file(temp)
   end, 5000)
