@@ -76,7 +76,8 @@ function M.get_marks(ctx)
     local n = mark.mark:sub(2, 2)
     -- Cannot restore last change location mark, so filter it out.
     if not IGNORE_LOCAL_MARKS[n] then
-      acc[mark.mark:sub(2, 2)] = { mark.pos[2], mark.pos[3] }
+      -- Convert (1, 1) to (1, 0) indexing
+      acc[mark.mark:sub(2, 2)] = { mark.pos[2], mark.pos[3] - 1 }
     end
     return acc
   end)
