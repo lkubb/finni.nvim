@@ -25,7 +25,7 @@ T["status view"] = function()
   MiniTest.finally(reset) -- post_case is not run on error ?!
   -- Setup Neogit window, ensure we're in a constant position and save session
   child.cmd("Neogit")
-  child.screen_contains({ "Recent Commits", "Staged changes", "Unmerged into" })
+  child.screen_contains({ "Recent Commits", "Unstaged changes", "Staged changes", "Unmerged into" })
   eq(#child.api.nvim_list_tabpages(), 2)
   child.type_keys({ "gg", "0" })
   eq(child.api.nvim_win_get_cursor(0), { 1, 0 })
@@ -33,7 +33,12 @@ T["status view"] = function()
   eq(child.api.nvim_win_get_cursor(0), { 3, 0 })
 
   local function run_assertions()
-    child.screen_contains({ "Recent Commits", "Staged changes", "Unmerged into" })
+    child.screen_contains({
+      "Recent Commits",
+      "Unstaged changes",
+      "Staged changes",
+      "Unmerged into",
+    })
     eq(#child.api.nvim_list_tabpages(), 2)
     eq(child.bo.ft, "NeogitStatus")
     eq(child.api.nvim_win_get_cursor(0), { 3, 0 })

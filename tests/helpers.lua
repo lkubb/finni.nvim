@@ -41,10 +41,13 @@ function Proxy:__index(k)
       end, self._mod, k, ...)
       return
     end
-    local ret = self._child.lua_func(function(mod, name, ...)
+    local ret = vim.F.pack_len(self._child.lua_func(function(mod, name, ...)
       return require(mod)[name](...)
-    end, self._mod, k, ...)
-    return ret ~= vim.NIL and ret or nil
+    end, self._mod, k, ...))
+    if ret.n == 1 and ret[1] == vim.NIL then
+      return
+    end
+    return vim.F.unpack_len(ret)
   end
 end
 
@@ -249,9 +252,9 @@ end
 local default_config = {
   log = {
     handler = function(rend)
-      local l = vim.g.LOG or {}
+      local l = vim.g._LOG or {}
       l[#l + 1] = rend
-      vim.g.LOG = l
+      vim.g._LOG = l
     end,
     level = "trace",
   },
@@ -453,7 +456,7 @@ local function new_child(init_opts)
   ---@param spec? {level?: finni.log.ConfigLevel, pattern?: string}
   ---@return string[] log_msgs Filtered log messages
   child.filter_log = function(spec)
-    local log = child.g.LOG
+    local log = child.g._LOG
     if not log or log == vim.NIL then
       return {}
     end
@@ -535,9 +538,20 @@ local function new_child(init_opts)
   child.lua_func = function(f, ...)
     ensure_running()
     prevent_hanging("lua_func")
-    return child.api.nvim_exec_lua(
-      "local f, args = ...; args = assert(loadstring(args))(); return assert(loadstring(f))()(vim.F.unpack_len(args))",
-      { ldump(f), ldump(vim.F.pack_len(...)) }
+    return vim.F.unpack_len(
+      assert(
+        loadstring(
+          child.api.nvim_exec_lua(
+            "local f, args = ...; args = assert(loadstring(args))(); "
+              .. ("local ldump = %s('%s')"):format(
+                ldump.dofile_path and "dofile" or "require",
+                ldump.dofile_path or ldump.require_path
+              )
+              .. "return ldump(vim.F.pack_len(assert(loadstring(f))()(vim.F.unpack_len(args))))",
+            { ldump(f), ldump(vim.F.pack_len(...)) }
+          )
+        )
+      )()
     )
   end
 
