@@ -63,7 +63,7 @@ end
 function M.xpcall_handler(err)
   local msg = vim.split(
     "xpcall caught error: "
-      .. err
+      .. tostring(err)
       .. "\nProtected stack traceback:"
       .. debug.traceback("", 2):sub(18),
     "\n"
@@ -175,7 +175,7 @@ end
 ---@return Rets... #
 ---   Variadic returns of first successful call
 function M.try_any(funs, ...)
-  for _, fun in funs do
+  for _, fun in ipairs(funs) do
     local res = xpc(fun, ...)
     if res[1] then
       return unpack_res(res)
