@@ -621,9 +621,15 @@ function M.restore_jumplist(winid)
           jumps[#jumps] = nil
           correct_buf = vim.api.nvim_win_get_buf(winid)
           correct_alt = get_alternate_buf(winid) --[[@as integer]]
-          if vim.api.nvim_buf_get_name(correct_buf) ~= last_item[1] then
+          local correct_buf_name = vim.api.nvim_buf_get_name(correct_buf)
+          if correct_buf_name ~= last_item[1] then
             log.debug(
-              "Need to jump back to non-final jumplist entry, which is in a different buffer than the currently displayed one"
+              (
+                "Need to jump back to non-final jumplist entry. Last jumplist entry is in a"
+                .. "different buffer (%s) than the currently displayed one (%s)"
+              ),
+              last_item[1],
+              correct_buf_name
             )
             -- Don't need to force-restore buffer, this is a technicality
             local bufnr = vim.fn.bufadd(last_item[1] --[[@as string]])
@@ -631,11 +637,6 @@ function M.restore_jumplist(winid)
               vim.fn.bufload(bufnr)
             end
             vim.api.nvim_win_set_buf(winid, bufnr)
-          else
-            log.debug(
-              "Need to jump back to non-final jumplist entry, which is in the same buffer as the currently displayed one"
-            )
-            correct_buf = nil
           end
           -- Before restoring shada, ensure vim thinks we're at the last entry of the new jumplist
           -- Note: It can happen that the last entry is removed from the jumplist

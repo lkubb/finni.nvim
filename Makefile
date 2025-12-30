@@ -57,7 +57,8 @@ _cleantest: .test
 	rm -rf ".test/env/data/nvim"; \
 	rm -rf ".test/env/state/nvim"; \
 	rm -rf ".test/env/run/nvim"; \
-	rm -f ".test/nvim_init.lua"
+	rm -f ".test/nvim_init.lua"; \
+	rm -f ".test/verbose_log"
 
 .test: .test/env
 .test/env: .test/env/cache .test/env/config .test/env/data .test/env/state .test/env/run

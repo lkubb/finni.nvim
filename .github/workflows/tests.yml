@@ -57,6 +57,8 @@ jobs:
       NVIM_TAG: ${{ matrix.nvim_tag }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # required to run neogit extension test - rewrite?
 
       - name: Install Neovim and dependencies
         run: |
