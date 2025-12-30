@@ -124,7 +124,7 @@ end
 
 ldump_mt.__call = function(self, x)
   assert(
-    self.require_path,
+    self.require_path or self.dofile_path,
     "Put the lua path to ldump libary into ldump.require_path before calling ldump itself"
   )
 

@@ -10,6 +10,12 @@ vim.bo.swapfile = false
 vim.go.splitright = true
 vim.go.splitbelow = true
 
+if vim.env.FINNI_DEBUG then
+  vim.go.verbose = vim.env.FINNI_DEBUG == "1" and 10 or tonumber(vim.env.FINNI_DEBUG)
+  vim.go.verbosefile =
+    vim.fs.joinpath(vim.g.finni_root, ".test", "verbose_log_" .. tostring(vim.fn.getpid()))
+end
+
 -- Set up 'mini.test' only when calling headless Neovim (like with `make test`)
 if #vim.api.nvim_list_uis() == 0 then
   -- Add 'mini.nvim' to 'runtimepath' to be able to use 'mini.test'
@@ -41,9 +47,9 @@ local function _logerr(msg)
       or {
         log = {
           handler = function(rend)
-            local l = vim.g.LOG or {}
+            local l = vim.g._LOG or {}
             l[#l + 1] = rend
-            vim.g.LOG = l
+            vim.g._LOG = l
           end,
           level = "trace",
         },
