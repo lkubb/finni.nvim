@@ -151,6 +151,9 @@ T["Project picker works"] = function(picker)
   )
   pcall(child.type_keys, "<CR>")
   none(child.filter_log({ level = "error" }))
+  -- recent nightly versions start the picker with `i` as input for some reason, temp workaround
+  -- TODO: Remove this
+  child.type_keys("<BS>")
   child.screen_contains(
     { vim.pesc("Autosessions [" .. project_name:sub(1, 4)), "basic/]" },
     "default"
