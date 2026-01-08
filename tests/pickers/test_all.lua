@@ -31,7 +31,7 @@ T["Manual picker works"] = function(picker)
   child.screen_contains("Finni Manual Sessions", "basic")
   -- Other than with fzf_lua (external process), this fails with "E31: No such mapping" for some reason,
   -- but the session is still loaded.
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
   child.screen_misses("Finni Manual Sessions")
   child.screen_contains("Lorem ipsum")
@@ -91,7 +91,7 @@ T["All autosessions picker works"] = function(picker)
   local sess_data = fixtures.autosession("basic")
   picker.auto_all_picker()
   child.screen_contains("Finni Autosessions", ".test/projects")
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
   child.screen_misses("Finni Autosessions")
   child.screen_contains("Lorem ipsum")
@@ -117,7 +117,7 @@ T["Autosession in project picker works"] = function(picker)
     { vim.pesc("Autosessions [" .. project_name:sub(1, 4)), "basic/]" },
     "default"
   )
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
   child.screen_misses({ vim.pesc("Autosessions [" .. project_name:sub(1, 4)), "basic/]" })
   child.screen_contains("Lorem ipsum")
@@ -149,7 +149,7 @@ T["Project picker works"] = function(picker)
     "Finni Autosession Projects",
     { vim.pesc(project_name:sub(1, 20)), vim.pesc(project_name:sub(-20)) }
   )
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
   -- recent nightly versions start the picker with `i` as input for some reason, temp workaround
   -- TODO: Remove this
