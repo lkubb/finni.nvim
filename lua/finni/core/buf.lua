@@ -102,6 +102,7 @@ function M.parse_changelist(ctx)
   end
   local changelist
   vim.api.nvim_buf_call(ctx.bufnr, function()
+    -- Note: Could not confirm the following in test, maybe this comment is incorrect?
     -- Only current buffer has correct changelist position, for others getchangelist returns the length of the list.
     -- Additionally, the current buffer needs to be displayed in the current window. I think the window change
     -- happens automatically if the buffer is displayed in a window in the current tabpage (?).
@@ -196,6 +197,15 @@ function M.ctx(bufnr, init)
   end
   ctx.uuid = init or generate_uuid()
   return ctx
+end
+
+--- Get Finni buffer context for a buffer (~ proxy to vim.b.finni_ctx) by its uuid.
+--- Keys can be updated in-place.
+---@param uuid BufUUID #
+---   Buffer UUID of the buffer to get the context for.
+---@return BufContext? ctx #
+function M.ctx_by_uuid(uuid)
+  return BufContext.by_uuid(uuid)
 end
 
 --- Ensure a specific buffer exists in this neovim instance.
@@ -364,8 +374,7 @@ local function restore_modified(ctx)
   end
   if ctx.swapfile then
     if vim.bo[ctx.bufnr].readonly then
-      ctx.unrestored = true
-      -- Unnamed buffers should not have a swap file, but account for it anyways
+      ctx.unrestored_modifications = true
       log.warn(
         "Not restoring buffer %s because it is read-only, likely because it has an "
           .. "existing swap file and you chose to open it read-only.",
@@ -382,7 +391,7 @@ local function restore_modified(ctx)
   local state_dir = assert(ctx.state_dir)
   local save_file = vim.fs.joinpath(state_dir, "modified_buffers", ctx.uuid .. ".buffer")
   if not util.path.exists(save_file) then
-    ctx.needs_restore = nil
+    ctx.pending_modifications = nil
     log.warn("Not restoring buffer %s because its save file is missing.", tostring(ctx))
     return
   end
@@ -410,7 +419,7 @@ local function restore_modified(ctx)
         ctx.swapfile
       )
     end
-    ctx.needs_restore = nil
+    ctx.pending_modifications = nil
     ctx.restore_last_pos = true
     ctx.last_changedtick = vim.b[ctx.bufnr].changedtick
   end, save_file)
@@ -659,7 +668,7 @@ local function restore_modified_preview(ctx, state_dir)
         vim.bo[ctx.bufnr].modified = false
       end
       -- Ensure the buffer is remembered as only partially restored if it is never loaded until the next save
-      ctx.needs_restore = true
+      ctx.pending_modifications = true
       -- Remember the state dir for restore_modified, which is called after a buffer has been re-edited
       ctx.state_dir = state_dir
     end,
@@ -787,7 +796,7 @@ function M.save_modified(state_dir, bufs)
   local modified_buffers = vim.tbl_filter(function(buf)
     -- Ensure buffers with pending modifications (never focused after a session was restored)
     -- are included in the list of modified buffers. Saving them is skipped later.
-    return buf.needs_restore or vim.bo[buf.bufnr].modified
+    return buf.pending_modifications or buf.unrestored_modifications or vim.bo[buf.bufnr].modified
   end, bufs)
   log.debug(
     "Saving modified buffers in state dir (%s)\nModified buffers: %s",
@@ -801,16 +810,19 @@ function M.save_modified(state_dir, bufs)
   -- Can't call :wundo when the cmd window (e.g. q:) is active, otherwise we receive
   -- E11: Invalid in command-line window
   -- TODO: Should we save modified buffers at all if we can't guarantee undo history?
-  ---@type boolean
   local skip_wundo = vim.fn.getcmdwintype() ~= ""
   for _, ctx in ipairs(modified_buffers) do
     -- Unrestored buffers should not overwrite the save file, but still be remembered
     -- unrestored are buffers that were not restored at all due to swapfile and being opened read-only
-    -- needs_restore are buffers that were restored initially, but have never been entered since loading.
+    -- pending_modifications are buffers that were restored initially, but have never been entered since loading.
     -- If we saved the latter, we would lose the undo history since it hasn't been loaded for them.
     -- This at least affects unnamed buffers since we solely manage the history for them.
-    if ctx.unrestored or ctx.needs_restore then
-      log.debug("Modified buf %s has not been restored yet, skipping save", tostring(ctx))
+    if ctx.pending_modifications or ctx.unrestored_modifications then
+      log.debug(
+        "Modified buf %s has not been restored%s, skipping save",
+        ctx.pending_modifications and " yet" or "",
+        tostring(ctx)
+      )
     else
       local save_file = vim.fs.joinpath(state_dir, "modified_buffers", ctx.uuid .. ".buffer")
       local undo_file = vim.fs.joinpath(state_dir, "modified_buffers", ctx.uuid .. ".undo")
