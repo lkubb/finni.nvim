@@ -97,7 +97,7 @@ The wall, sadly, may not be.
 
 <a id="finni-dependencies"></a>
 ## ⛓️ Dependencies
-* Neovim 0.10+
+* Neovim 0.11+ (almost everything should work in 0.10+ though, with the exception of separate history handling)
 * [`lewis6991/gitsigns.nvim`](https://github.com/lewis6991/gitsigns.nvim/) (optional) for branch monitoring
 
 <a id="finni-setup"></a>

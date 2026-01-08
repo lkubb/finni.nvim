@@ -38,7 +38,7 @@
 --- Window (ID as string)-specific cursor positions
 ---@field need_edit? boolean #
 --- Indicates the buffer needs :edit to be initialized correctly (autocmds are suppressed during session load)
----@field needs_restore? boolean #
+---@field pending_modifications? boolean #
 --- Only used for buffers with unsaved modifications. Indicates the buffer has been loaded
 --- during session load, but has not been initialized completely because it never has been accessed.
 ---@field initialized? boolean #
@@ -59,7 +59,7 @@
 --- The directory to save session-associated state in. Used for modification persistence.
 ---@field swapfile? string #
 --- The path to the buffer's swapfile if it had one when loaded.
----@field unrestored? boolean #
+---@field unrestored_modifications? boolean #
 --- Indicates the buffer could not be restored properly because it had a swapfile and was opened read-only
 ---@field last_changedtick? integer
 --- Tracks the last backed up changedtick when buffer modificataions are persisted.

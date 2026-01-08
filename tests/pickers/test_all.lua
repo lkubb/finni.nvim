@@ -26,18 +26,18 @@ getmetatable(T).opts.parametrize = vim
 
 T["Manual picker works"] = function(picker)
   picker = pickers[picker]
-  local sess_data = fixtures.session("basic")
+  local sess_data = fixtures.session("basic", true)
   picker.manual_picker()
   child.screen_contains("Finni Manual Sessions", "basic")
   -- Other than with fzf_lua (external process), this fails with "E31: No such mapping" for some reason,
   -- but the session is still loaded.
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
   child.screen_misses("Finni Manual Sessions")
   child.screen_contains("Lorem ipsum")
   local bufs = child.api.nvim_list_bufs()
   eq(#bufs, 2)
-  child.reset()
+  child.restart()
   picker.manual_picker()
   child.screen_contains("Finni Manual Sessions")
   ok((util.path.exists(sess_data)))
@@ -49,7 +49,7 @@ end
 
 T["Manual picker respects call overrides"] = function(picker)
   picker = pickers[picker]
-  local sess_data = fixtures.session("basic")
+  local sess_data = fixtures.session("basic", true)
   local old_sess_dir = vim.fn.fnamemodify(sess_data, ":h")
   local new_sess_dir = util.path.join(vim.fn.fnamemodify(old_sess_dir, ":h"), "foobar")
   MiniTest.finally(function()
@@ -68,7 +68,7 @@ end
 
 T["Manual picker respects default overrides"] = function(picker)
   picker = pickers[picker]
-  local sess_data = fixtures.session("basic")
+  local sess_data = fixtures.session("basic", true)
   local old_sess_dir = vim.fn.fnamemodify(sess_data, ":h")
   local new_sess_dir = util.path.join(vim.fn.fnamemodify(old_sess_dir, ":h"), "foobar")
   MiniTest.finally(function()
@@ -91,13 +91,13 @@ T["All autosessions picker works"] = function(picker)
   local sess_data = fixtures.autosession("basic")
   picker.auto_all_picker()
   child.screen_contains("Finni Autosessions", ".test/projects")
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
   child.screen_misses("Finni Autosessions")
   child.screen_contains("Lorem ipsum")
   local bufs = child.api.nvim_list_bufs()
   eq(#bufs, 2)
-  child.reset()
+  child.restart()
   picker.auto_all_picker()
   child.screen_contains("Finni Autosessions")
   ok((util.path.exists(sess_data)))
@@ -117,13 +117,13 @@ T["Autosession in project picker works"] = function(picker)
     { vim.pesc("Autosessions [" .. project_name:sub(1, 4)), "basic/]" },
     "default"
   )
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
   child.screen_misses({ vim.pesc("Autosessions [" .. project_name:sub(1, 4)), "basic/]" })
   child.screen_contains("Lorem ipsum")
   local bufs = child.api.nvim_list_bufs()
   eq(#bufs, 2)
-  child.reset()
+  child.restart()
   child.cmd("cd " .. vim.fn.fnameescape(project_dir))
   picker.auto_picker()
   none(child.filter_log({ level = "error" }))
@@ -149,8 +149,11 @@ T["Project picker works"] = function(picker)
     "Finni Autosession Projects",
     { vim.pesc(project_name:sub(1, 20)), vim.pesc(project_name:sub(-20)) }
   )
-  pcall(child.type_keys, "<CR>")
+  pcall(child.type_keys, 100, "<CR>")
   none(child.filter_log({ level = "error" }))
+  -- recent nightly versions start the picker with `i` as input for some reason, temp workaround
+  -- TODO: Remove this
+  child.type_keys("<BS>")
   child.screen_contains(
     { vim.pesc("Autosessions [" .. project_name:sub(1, 4)), "basic/]" },
     "default"
@@ -170,20 +173,27 @@ T["Pickers are registered"] = function(picker)
   local cmd
   local needs_setup = true
   if picker == "snacks" then
-    return
+    return -- Snacks does not provide an Ex command
   elseif picker == "mini_pick" then
-    child.lua("require('mini.pick').setup()")
     cmd = "Pick finni_auto_all"
   elseif picker == "fzf_lua" then
     cmd = "FzfLua finni_auto_all"
   elseif picker == "telescope" then
+    if vim.fn.has("nvim-0.10.4") == 0 then
+      MiniTest.skip("Telescope requires nvim 0.10.4+")
+    end
     cmd = "Telescope finni auto_all"
     needs_setup = false
   end
   if needs_setup then
     pickers[picker].setup({}, true)
   end
-  child.lua_notify(("vim.cmd('%s')"):format(cmd))
+  if picker == "mini_pick" then
+    child.lua("require('mini.pick').setup()")
+    child.lua_notify(("vim.cmd('%s')"):format(cmd))
+  else
+    child.cmd(cmd)
+  end
   child.screen_contains("Finni Autosessions", vim.pesc(".test/projects"))
 end
 
