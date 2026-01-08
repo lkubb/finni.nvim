@@ -168,7 +168,8 @@ local function booleanish_context(bool)
     local fails = {}
     for i = 1, cnt do
       if not not select(i, ...) ~= bool then
-        fails[i] = vim.inspect(select(i, ...))
+        local var = select(i, ...) -- need intermediate variable, otherwise inspection can cause 'attempt to index a boolean value'
+        fails[i] = vim.inspect(var)
       end
     end
     return str:format(vim.inspect(fails))
@@ -610,6 +611,34 @@ local function new_child(init_opts)
     end
     local lines = child.api.nvim_buf_get_lines(bufnr or 0, 0, -1, false)
     return table.concat(lines, "\n")
+  end
+
+  --- Return list of matching buffers on child
+  ---@param flt? string|fun(bufnr: integer): boolean Predicate function
+  ---@return {name: string, bufnr: integer}[] buflist
+  child.filter_bufs = function(flt)
+    flt = flt or function()
+      return true
+    end
+    if type(flt) == "string" then
+      local pattern = flt
+      flt = function(bufnr)
+        return child.api.nvim_buf_get_name(bufnr):find(pattern)
+      end
+    end
+
+    return vim
+      .iter(child.api.nvim_list_bufs())
+      :filter(flt)
+      :map(function(bufnr)
+        local ok, ctx = pcall(child.api.nvim_buf_get_var, bufnr, "finni_ctx")
+        return {
+          name = child.api.nvim_buf_get_name(bufnr),
+          bufnr = bufnr,
+          uuid = (ok and ctx or {}).uuid,
+        }
+      end)
+      :totable()
   end
 
   --- Build a function that checks for the presence/absence

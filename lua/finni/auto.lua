@@ -403,7 +403,7 @@ local function stop_monitoring()
     monitor_group = nil
   end
   last_head = nil
-  -- TODO: Should we remove buffer-local variables like _finni_needs_restore?
+  -- TODO: Should we remove buffer context?
 end
 
 --- Create hooks that:
