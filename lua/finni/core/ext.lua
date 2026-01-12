@@ -120,36 +120,28 @@ function M.get(name)
     has_ext, ext = pcall(require, string.format("resession.extensions.%s", name))
   end
   if not has_ext then
-    vim.notify_once(
-      string.format(
-        '[Finni] Missing extension "%s" in namespace "%s", ensure it is installed. '
-          .. "If the namespace is wrong, check the `extensions.%s.resession_compat` setting",
-        name,
-        ns,
-        name
-      ),
-      vim.log.levels.WARN
+    require("finni.log").warn(
+      "[Finni] Missing extension %s in namespace %s, ensure it is installed. "
+        .. "If the namespace is wrong, check the `extensions.%s.resession_compat` setting",
+      name,
+      ns,
+      name
     )
     return
   elseif compat_fallback then
     require("finni.log").warn(
-      string.format(
-        '[Finni] Missing extension at "finni.extensions.%s", but found it in "resession.extensions.%s". '
-          .. "Ensure you set `extensions.%s.resession_compat` to true to avoid overhead",
-        name,
-        name,
-        name
-      )
+      '[Finni] Missing extension at "finni.extensions.%s", but found it in "resession.extensions.%s". '
+        .. "Ensure you set `extensions.%s.resession_compat` to true to avoid overhead",
+      name,
+      name,
+      name
     )
   end
   ---@cast ext Extension
   if ext.config then
     local ok, err = pcall(ext.config, Config.extensions[name])
     if not ok then
-      vim.notify_once(
-        string.format('Error configuring Finni extension "%s": %s', name, err),
-        vim.log.levels.ERROR
-      )
+      require("finni.log").error('Error configuring Finni extension "%s": %s', name, err)
       return
     end
   end
