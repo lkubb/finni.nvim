@@ -2838,10 +2838,6 @@ ActiveSession:update({opts})                 *finni.core.ActiveSession:update()*
     Parameters: ~
       • {opts} |finni.core.Session.InitOptsWithMeta|
 
-    Returns: ~
-        {modified} `boolean`
-          Indicates whether any config modifications occurred
-
 ActiveSession:restore({opts}, {snapshot})   *finni.core.ActiveSession:restore()*
     Restore a snapshot from disk or memory It seems emmylua does not pick up
     this override and infers IdleSession instead.
@@ -3440,10 +3436,6 @@ IdleSession:update({opts})                     *finni.core.IdleSession:update()*
     Parameters: ~
       • {opts} |finni.core.Session.InitOptsWithMeta|
 
-    Returns: ~
-        {modified} `boolean`
-          Indicates whether any config modifications occurred
-
 IdleSession:restore({opts}, {snapshot})       *finni.core.IdleSession:restore()*
     Restore a snapshot from disk or memory
 
@@ -3901,10 +3893,6 @@ PendingSession:update({opts})               *finni.core.PendingSession:update()*
 
     Parameters: ~
       • {opts} |finni.core.Session.InitOptsWithMeta|
-
-    Returns: ~
-        {modified} `boolean`
-          Indicates whether any config modifications occurred
 
                                            *finni.core.PendingSession:restore()*
 PendingSession:restore({opts}, {snapshot})

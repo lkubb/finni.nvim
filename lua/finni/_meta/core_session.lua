@@ -178,8 +178,6 @@ function Session:add_hook(event, hook) end
 
 --- Update modifiable options without attaching/detaching a session
 ---@param opts Session.InitOptsWithMeta #
----@return boolean modified #
---- Indicates whether any config modifications occurred
 function Session:update(opts) end
 
 --- Restore a snapshot from disk or memory
