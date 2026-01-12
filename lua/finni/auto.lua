@@ -628,7 +628,7 @@ function M.reset(opts)
   else
     opts.reload = false
   end
-  session:delete({ notify = opts.notify, silence_errors = opts.silence_errors })
+  session:delete({ notify = opts.notify, silence_errors = true })
   if opts.reload ~= false then
     M.reload()
   end

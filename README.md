@@ -2188,11 +2188,6 @@ Attempt to start a new autosession (optionally).
 
     Table fields:
 
-    * **silence_errors**? `boolean`\
-      Don't error during this operation
-    * **reset**? `boolean`\
-      When detaching a session in the process, unload associated resources/reset
-      everything during the operation when restoring a snapshot.
     * **notify**? `boolean`\
       Notify on success
     * **cwd**? `(string|true)`\
@@ -2865,11 +2860,6 @@ API options for `auto.reset`
 
 **Fields:**
 
-* **silence_errors**? `boolean`\
-  Don't error during this operation
-* **reset**? `boolean`\
-  When detaching a session in the process, unload associated resources/reset
-  everything during the operation when restoring a snapshot.
 * **notify**? `boolean`\
   Notify on success
 * **cwd**? `(string|true)`\

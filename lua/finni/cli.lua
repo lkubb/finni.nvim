@@ -68,6 +68,7 @@ local funcs = {
     -- should require bang with unsaved changes?
     func = Finni.reset,
     kwargs = {
+      cwd = {},
       notify = { "true", "false" },
       reload = { "true", "false" },
     },
