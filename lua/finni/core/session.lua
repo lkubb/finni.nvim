@@ -200,7 +200,10 @@ function Session:update(opts)
       self:add_hook("detach", Config.session.on_detach)
     end
   end
-  return update_autosave
+  if update_autosave and self:is_attached() then
+    ---@cast self ActiveSession
+    self:_setup_autosave()
+  end
 end
 
 function Session:restore(opts, snapshot)
@@ -632,7 +635,7 @@ end
 function M.get_tabs()
   return vim.iter(pairs(list_active_tabpage_sessions())):fold({}, function(res, tabid, name)
     res[tabid] = assert(
-      sessions[name] and sessions[name].tabid == tabid,
+      sessions[name].tabid == tabid and sessions[name],
       "Tabpage session not known or points to wrong tab, this is likely a bug"
     )
     return res

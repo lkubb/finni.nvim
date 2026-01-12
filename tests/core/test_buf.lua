@@ -187,21 +187,6 @@ local function save_modified(state_dir, bufs)
   end, state_dir, bufs)
 end
 
----@param state_dir string
----@param keep table<string, true?>
-local function clean_modified(state_dir, keep)
-  ---@diagnostic disable-next-line: redefined-local
-  return child.lua_func(function(state_dir, keep)
-    ---@diagnostic disable-next-line: redefined-local
-    local buf = require("finni.core.buf")
-    local buf_ctx = vim.iter(keep):map(buf.ctx_by_uuid):fold(function(agg, ctx)
-      agg = agg or {}
-      agg[ctx.uuid] = ctx
-    end)
-    return buf.clean_modified(state_dir, buf_ctx)
-  end, state_dir, keep)
-end
-
 local function run_saves_modified_buffers(content_ptrn)
   local tmpdir = child.fn.tempname()
   local res = save_modified(tmpdir)

@@ -3183,10 +3183,6 @@ Update modifiable options without attaching/detaching a session
 **Parameters:**
   * **opts** [`finni.core.Session.InitOptsWithMeta`](<#finni.core.Session.InitOptsWithMeta>)
 
-
-**Returns:** **modified** `boolean`\
-Indicates whether any config modifications occurred
-
 </details>
 
 <a id="finni.core.ActiveSession:restore()"></a>
@@ -3862,10 +3858,6 @@ Update modifiable options without attaching/detaching a session
 **Parameters:**
   * **opts** [`finni.core.Session.InitOptsWithMeta`](<#finni.core.Session.InitOptsWithMeta>)
 
-
-**Returns:** **modified** `boolean`\
-Indicates whether any config modifications occurred
-
 </details>
 
 <a id="finni.core.IdleSession:restore()"></a>
@@ -4394,10 +4386,6 @@ Update modifiable options without attaching/detaching a session
 
 **Parameters:**
   * **opts** [`finni.core.Session.InitOptsWithMeta`](<#finni.core.Session.InitOptsWithMeta>)
-
-
-**Returns:** **modified** `boolean`\
-Indicates whether any config modifications occurred
 
 </details>
 
