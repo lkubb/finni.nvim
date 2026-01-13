@@ -714,7 +714,7 @@ function M.close_everything()
   vim.api.nvim_win_set_buf(0, scratch)
   vim.bo[scratch].buftype = ""
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.bo[bufnr].buflisted then
+    if bufnr ~= scratch then
       vim.api.nvim_buf_delete(bufnr, { force = true })
     end
   end
