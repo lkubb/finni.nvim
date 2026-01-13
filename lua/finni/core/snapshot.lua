@@ -107,7 +107,7 @@ local function get_shada_file(snapshot_ctx, op)
   if not snapshot_ctx.state_dir then
     log.warn(
       "Cannot handle shada, missing state_dir/context_dir. "
-        .. "Ensure you use finni.core.snapshot.%s_as.",
+        .. "Ensure you use `finni.core.snapshot.%s_as`.",
       op
     )
     return
@@ -385,7 +385,7 @@ local function create(target_tabpage, opts, snapshot_ctx)
       if extmod and extmod.on_save and (ext_config.enable_in_tab or not target_tabpage) then
         util.try_log_else(
           extmod.on_save,
-          { [1] = "Extension %s save error: %s", [2] = ext_name, notify = true },
+          { [1] = "Extension `%s` save error: %s", [2] = ext_name, notify = true },
           function(ext_data)
             snapshot[ext_name] = ext_data
           end,
@@ -432,7 +432,7 @@ function M.save_as(name, opts, target_tabpage, session_file, state_dir, context_
     log.warn("Save triggered while still loading session. Skipping save.")
     return nil, {}
   end
-  log.debug("Saving %s session %s with opts %s", target_tabpage and "tab" or "global", name, opts)
+  log.debug("Saving %s session `%s` with opts %s", target_tabpage and "tab" or "global", name, opts)
   -- Ensure all hooks receive these two params
   opts.session_file, opts.state_dir, opts.context_dir =
     opts.session_file or session_file, opts.state_dir or state_dir, opts.context_dir or context_dir

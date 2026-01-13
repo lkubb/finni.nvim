@@ -172,25 +172,25 @@ function M.explicit_ctx(session, project, opts)
   end
   local project_dir = util.path.get_autosession_project_dir(project, Config.autosession.dir)
   if not util.path.exists(project_dir) then
-    msg("Explicit project not found: %s", project)
+    msg("Explicit project not found: `%s`", project)
     return
   end
   local session_file = util.path.get_autosession_file(session, project_dir)
   if not util.path.exists(session_file) then
-    msg("Explicit session not found: %s", session)
+    msg("Explicit session not found: `%s`", session)
     return
   end
   local data = util.path.load_json_file(session_file) ---@type finni.core.Snapshot
   local cwd = data.global.cwd
   local ctx = get_ctx(cwd)
   if not ctx then
-    msg("Failed to resolve autosession %s in project %s", session, project)
+    msg("Failed to resolve autosession `%s` in project `%s`", session, project)
     return
   end
   if ctx.project.name ~= project then
     -- TODO: Consider moving it if target does not exist?
     msg(
-      "Failed to resolve %s@%s: Data exists, but associated dir %s resolved to project %s instead",
+      "Failed to resolve `%s@%s`: Data exists, but associated dir `%s` resolved to project `%s` instead",
       project,
       session,
       cwd,
@@ -200,7 +200,7 @@ function M.explicit_ctx(session, project, opts)
   end
   if ctx.name ~= session then
     msg(
-      "Failed to resolve %s@%s: Data exists, but associated dir %s resolved to session %s instead. "
+      "Failed to resolve `%s@%s`: Data exists, but associated dir `%s` resolved to session `%s` instead. "
         .. "If this is a branch-associated session, ensure you have checked it out.",
       project,
       session,
@@ -262,7 +262,7 @@ function M.load(autosession, opts)
   load_opts.reset = not not load_opts.reset
   ---@cast load_opts LoadOptsParsed & PassthroughOpts
   log.debug(
-    "Loading autosession %s with opts %s.\nData: %s",
+    "Loading autosession `%s` with opts %s.\nData: %s",
     autosession.name,
     load_opts,
     autosession
@@ -279,7 +279,7 @@ function M.load(autosession, opts)
     if not session or not snapshot then
       -- This is an edge case, we made sure the file existed and the call above would usually error
       log.error(
-        "Failed loading autosession %s in project %s. Consider deleting the saved snapshot at %s.",
+        "Failed loading autosession `%s` in project `%s`. Consider deleting the saved snapshot at `%s`.",
         autosession.name,
         autosession.project.name,
         session_file
@@ -297,7 +297,7 @@ function M.load(autosession, opts)
       -- The autosession is used to setup a default view instead of session persistence,
       -- but the referenced session does not exist.
       log.error(
-        "Could not find autosession %s in project %s, cannot start a new one because attach was set to false. "
+        "Could not find autosession `%s` in project `%s`, cannot start a new one because attach was set to false. "
           .. "Ensure the session file exists if you configure autloading sessions without attaching after.",
         autosession.name,
         autosession.project.name
@@ -484,7 +484,7 @@ function monitor(autosession)
         end
         if last_head ~= vim.g.gitsigns_head then
           log.trace(
-            "Reloading project, switched from branch %s to branch %s",
+            "Reloading project, switched from branch `%s` to branch `%s`",
             last_head or "nil",
             vim.g.gitsigns_head or "nil"
           )
@@ -585,7 +585,7 @@ function M.delete(session, project, opts)
 
   if not util.path.exists(session_file) then
     (opts.silence_errors and log.debug or log.error)(
-      "Failed to delete session %s in project %s: File at %s does not exist",
+      "Failed to delete session `%s` in project `%s`: File at `%s` does not exist",
       session,
       project,
       session_file
@@ -608,7 +608,7 @@ function M.reset(opts)
     local ctx = get_ctx((opts.cwd ~= true and opts.cwd) or util.auto.cwd())
     if not ctx then
       vim.notify(
-        ("Failed to reset autosession! Passed path '%s' is not associated with one."):format(
+        ("Failed to reset autosession! Passed path `%s` is not associated with one."):format(
           opts.cwd
         ),
         vim.log.levels.ERROR
@@ -672,7 +672,7 @@ function M.reset_project(opts)
     assert(
       project_dir:sub(1, #expected_parent) == expected_parent,
       (
-        "Rendered project data dir (%s) is not in Finni's autosession data dir (%s), "
+        "Rendered project data dir (`%s`) is not in Finni's autosession data dir (`%s`), "
         .. "refusing to recursively delete directory. Pass force=true to skip this check"
       ):format(project_dir, expected_parent)
     )
@@ -689,7 +689,7 @@ function M.reset_project(opts)
 
   if opts.notify ~= false then
     vim.notify(
-      ("Reset project %s (dir: %s)"):format(name, project_dir),
+      ("Reset project `%s` (dir: `%s`)"):format(name, project_dir),
       vim.log.levels.INFO,
       Config.log.notify_opts
     )

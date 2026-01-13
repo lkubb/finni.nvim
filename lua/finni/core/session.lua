@@ -24,7 +24,7 @@ local function load_snapshot(session_file, silence_errors)
   local snapshot = util.path.load_json_file(session_file)
   if not snapshot then
     if not silence_errors then
-      error(string.format('Could not find session "%s"', session_file))
+      error(('Could not find session "%s"'):format(session_file))
     end
     return
   end
@@ -213,7 +213,7 @@ function Session:restore(opts, snapshot)
     -- The snapshot does not exist, errors were silenced, it might be fine to begin using it
     return self, false
   end
-  log.trace("Loading session %s. Data: %s", self.name, snapshot)
+  log.trace("Loading session `%s`. Data: %s", self.name, snapshot)
   local load_opts =
     vim.tbl_extend("keep", self:opts() --[[@as table]], opts, { attach = false, reset = "auto" })
   local tabid = Snapshot.restore_as(self.name, snapshot, load_opts)
@@ -308,10 +308,10 @@ function Session:delete(opts)
   if util.path.delete_file(self.session_file) then
     util.path.rmdir(self.state_dir, { recursive = true })
     if opts.notify ~= false then
-      vim.notify(string.format('Deleted session "%s"', self.name))
+      vim.notify(('Deleted session "%s"'):format(self.name))
     end
   elseif not opts.silence_errors then
-    error(string.format('No session "%s"', self.session_file))
+    error(('No session "%s"'):format(self.session_file))
   end
 end
 
@@ -388,7 +388,7 @@ function IdleSession:save(opts)
     return false
   end
   if save_opts.notify ~= false then
-    vim.notify(string.format('Saved session "%s"', self.name))
+    vim.notify(('Saved session "%s"'):format(self.name))
   end
   return true
 end
@@ -761,7 +761,7 @@ function M.detach(target, reason, opts)
     -- stylua: ignore
     return vim.iter(target):map(function(v) return M.detach(v, reason, opts) end):any(function(v) return v end)
   end
-  log.error("Invalid detach target: %s", target)
+  log.error("Invalid detach target: `%s`", target)
   return false
 end
 

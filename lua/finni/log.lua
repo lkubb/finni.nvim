@@ -163,7 +163,12 @@ local function fmt(level, msg, ...)
     args.n = args.n - 1
   end
   for i = 1, args.n do
-    args[i] = vim.inspect(args[i])
+    local typ = type(args[i])
+    if typ == "table" and (getmetatable(args[i]) or {}).__tostring ~= nil then
+      args[i] = tostring(args[i])
+    elseif typ ~= "string" then
+      args[i] = vim.inspect(args[i])
+    end
   end
   local ok, rendered = pcall(string.format, msg, vim.F.unpack_len(args))
   if not ok then

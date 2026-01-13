@@ -193,9 +193,9 @@ local function get_load_name(opts)
       if data then
         if data.tab_scoped then
           local tab_cwd = data.tabs[1].cwd
-          formatted = formatted .. string.format(" (tab) [%s]", util.path.shorten_path(tab_cwd))
+          formatted = formatted .. (" (tab) [%s]"):format(util.path.shorten_path(tab_cwd))
         else
-          formatted = formatted .. string.format(" [%s]", util.path.shorten_path(data.global.cwd))
+          formatted = formatted .. (" [%s]"):format(util.path.shorten_path(data.global.cwd))
         end
       end
       return formatted

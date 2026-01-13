@@ -114,7 +114,7 @@ T["log"]["try_log"] = function(should_err, level)
   if should_err then
     ex.some(log)
     eq(log[1].level, level:upper())
-    ex.match(log[1].message, 'Fudged stuff %("hi" "there"%)')
+    ex.match(log[1].message, "Fudged stuff %(hi there%)")
     ex.match(log[1].message, "util/test_util%.lua:")
   else
     eq(log, {})
@@ -145,7 +145,7 @@ T["log"]["try_log_else"] = function(should_err, level)
   if should_err then
     ex.some(log)
     eq(log[1].level, level:upper())
-    ex.match(log[1].message, 'Fudged stuff %("hi" "there"%)')
+    ex.match(log[1].message, "Fudged stuff %(hi there%)")
     ex.match(log[1].message, "util/test_util%.lua:")
   else
     eq(log, {})

@@ -119,9 +119,9 @@ return {config = function(extconf) if extconf and extconf.no_error then vim.g.ex
   }, function(chld)
     return chld.lua_func(function()
       local ext = require("finni.core.ext") ---@diagnostic disable-line: redefined-local
-      ext.get("testext")
-      ext.get("testext")
-      ext.get("testext")
+      assert(ext.get("testext"))
+      assert(ext.get("testext"))
+      assert(ext.get("testext"))
       return vim.g.ext_config_cnt
     end)
   end)
@@ -140,7 +140,7 @@ T["get() does not crash when loading ext errors"] = function()
     end)
     local log = chld.filter_log({ ---@diagnostic disable-line: redefined-local
       level = "warn",
-      pattern = '.*Missing extension "testext" in namespace "finni".*',
+      pattern = ".*Missing extension `testext` in namespace `finni`.*",
     })
     ---@diagnostic disable-next-line: redundant-return-value
     return res, log

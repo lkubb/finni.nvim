@@ -237,7 +237,7 @@ function M.get_win_info(tabnr, winid, current_win, opts, buflist)
     then
       util.try_log_else(
         extmod.save_win,
-        { [1] = 'Extension "%s" save_win error: %s', [2] = ext_name, notify = true },
+        { [1] = "Extension `%s` save_win error: %s", [2] = ext_name, notify = true },
         function(extension_data)
           win.extension_data = extension_data
           win.extension = ext_name
@@ -432,7 +432,7 @@ local function set_winlayout_data(layout, scale_factor, buflist)
       --- conditional for migration/backwards-compat with resession
       local view = win.view or { lnum = win.cursor[1], col = win.cursor[2] }
       log.debug(
-        "Restoring view for buf %s (uuid: %s) in win %s to %s",
+        "Restoring view for buf `%s` (uuid: `%s)` in win %s to %s",
         win.bufname,
         win.bufuuid or "nil",
         win.winid or "nil",
@@ -444,7 +444,7 @@ local function set_winlayout_data(layout, scale_factor, buflist)
         vim.fn.winrestview(view)
       end)
     end, {
-      "Failed to restore view for bufnr %s (uuid: %s) in win %s: %s",
+      "Failed to restore view for buf `%s` (uuid: `%s)` in win %s: %s",
       win.bufname,
       win.bufuuid or "nil",
       win.winid or "nil",
@@ -487,7 +487,7 @@ local function set_winlayout_data(layout, scale_factor, buflist)
           util.opts.with({ eventignore = "" }, function()
             util.try_log_else(
               extmod.load_win,
-              { [1] = "Extension %s load_win error: %s", [2] = win.extension, notify = true },
+              { [1] = "Extension `%s` load_win error: %s", [2] = win.extension, notify = true },
               ---@param new_winid integer
               function(new_winid)
                 new_winid = new_winid or win.winid
@@ -505,7 +505,7 @@ local function set_winlayout_data(layout, scale_factor, buflist)
       else
         -- This force-restores the buffer, regardless of `in_win`
         local ctx = Buf.added(win.bufname, win.bufuuid)
-        log.debug("Loading buffer %s (uuid: %s) in win %s", win.bufname, win.bufuuid, win.winid)
+        log.debug("Loading buffer `%s` (uuid: %s) in win %s", win.bufname, win.bufuuid, win.winid)
         vim.api.nvim_win_set_buf(win.winid, ctx.bufnr)
         if win.alt then
           -- Ensure altbuf is restored already in case user decides to switch immediately (or an autocmd causes the switch)
@@ -626,7 +626,7 @@ function M.restore_jumplist(winid)
             log.debug(
               (
                 "Need to jump back to non-final jumplist entry. Last jumplist entry is in a"
-                .. "different buffer (%s) than the currently displayed one (%s)"
+                .. "different buffer (`%s`) than the currently displayed one (`%s`)"
               ),
               last_item[1],
               correct_buf_name

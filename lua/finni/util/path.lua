@@ -352,7 +352,7 @@ end
 ---@param dirname string Name of the session directory
 ---@return string session_file #
 function M.get_session_file(name, dirname)
-  local filename = string.format("%s.json", M.escape(name))
+  local filename = ("%s.json"):format(M.escape(name))
   return M.join(M.get_session_dir(dirname), filename)
 end
 
@@ -374,7 +374,7 @@ end
 function M.get_session_paths(name, dirname)
   local session_name = M.escape(name)
   local session_dir = M.get_session_dir(dirname)
-  local filename = string.format("%s.json", session_name)
+  local filename = ("%s.json"):format(session_name)
   return M.join(session_dir, filename),
     M.join(session_dir, session_name),
     M.join(session_dir, "__state")
@@ -385,7 +385,7 @@ end
 ---@param dir string Absolute path of the directory to save sessions in
 ---@return string session_file #
 function M.get_autosession_file(name, dir)
-  local filename = string.format("%s.json", M.escape(name))
+  local filename = ("%s.json"):format(M.escape(name))
   return M.join(dir, filename)
 end
 
@@ -405,7 +405,7 @@ end
 ---@return string context_dir #
 function M.get_autosession_paths(name, dir)
   local session_name = M.escape(name)
-  local filename = string.format("%s.json", session_name)
+  local filename = ("%s.json"):format(session_name)
   return M.join(dir, filename), M.join(dir, session_name), M.join(dir, "__state")
 end
 

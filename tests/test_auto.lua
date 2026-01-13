@@ -86,7 +86,7 @@ T["explicit_ctx()"]["detects expectation mismatch"] = function()
   switch_or_create("newbranch")
   local ctx = auto.explicit_ctx("default", project_name)
   no(ctx)
-  some(child.filter_log({ level = "error", pattern = 'resolved to session "newbranch" instead' }))
+  some(child.filter_log({ level = "error", pattern = "resolved to session `newbranch` instead" }))
 end
 
 T["start()"] = function()

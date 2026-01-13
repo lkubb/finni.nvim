@@ -1,8 +1,8 @@
 ---@class finni.core.ext
 local M = {}
 
----@type finni.log
-local log
+local lazy_require = require("finni.util").lazy_require
+local log = lazy_require("finni.log")
 
 ---@namespace finni.core.ext
 ---@using finni.core
@@ -20,7 +20,7 @@ local hooks = setmetatable({
   post_save = {},
 }, {
   __index = function(_, key)
-    error(string.format('Unrecognized hook "%s"', key))
+    error(('Unrecognized hook "%s"'):format(key))
   end,
 })
 
@@ -35,8 +35,6 @@ local hook_to_event = {
   post_save = "FinniSaved",
 }
 
-local has_setup = false
-
 --- Trigger a `User` event
 ---@param name string Event name to be emitted
 local function event(name)
@@ -46,6 +44,7 @@ local function event(name)
   vim.schedule(emit_event)
 end
 
+local has_setup = false
 function M.setup()
   if has_setup then
     return
@@ -56,7 +55,6 @@ function M.setup()
       event(hook_to_event[hook])
     end)
   end
-  log = require("finni.log")
   has_setup = true
 end
 
@@ -114,14 +112,14 @@ function M.get(name)
     ns = "resession"
   end
   local compat_fallback
-  local has_ext, ext = pcall(require, string.format("%s.extensions.%s", ns, name))
+  local has_ext, ext = pcall(require, ("%s.extensions.%s"):format(ns, name))
   if not has_ext and ns == "finni" then
     compat_fallback = true
-    has_ext, ext = pcall(require, string.format("resession.extensions.%s", name))
+    has_ext, ext = pcall(require, ("resession.extensions.%s"):format(name))
   end
   if not has_ext then
-    require("finni.log").warn(
-      "[Finni] Missing extension %s in namespace %s, ensure it is installed. "
+    log.warn(
+      "Missing extension `%s` in namespace `%s`, ensure it is installed. "
         .. "If the namespace is wrong, check the `extensions.%s.resession_compat` setting",
       name,
       ns,
@@ -129,8 +127,8 @@ function M.get(name)
     )
     return
   elseif compat_fallback then
-    require("finni.log").warn(
-      '[Finni] Missing extension at "finni.extensions.%s", but found it in "resession.extensions.%s". '
+    log.warn(
+      "Missing extension at `finni.extensions.%s`, but found it in `resession.extensions.%s`. "
         .. "Ensure you set `extensions.%s.resession_compat` to true to avoid overhead",
       name,
       name,
@@ -141,7 +139,7 @@ function M.get(name)
   if ext.config then
     local ok, err = pcall(ext.config, Config.extensions[name])
     if not ok then
-      require("finni.log").error('Error configuring Finni extension "%s": %s', name, err)
+      log.error("Error configuring Finni extension `%s`: %s", name, err)
       return
     end
   end
@@ -181,13 +179,15 @@ function M.call(stage_name, snapshot, ...)
     if snapshot[ext_name] then
       local extmod = M.get(ext_name)
       if extmod and extmod[stage_name] then
-        log.trace("Calling extension %s.%s with data %s", ext_name, stage_name, snapshot[ext_name])
+        log.trace(
+          "Calling extension `%s.%s` with data %s",
+          ext_name,
+          stage_name,
+          snapshot[ext_name]
+        )
         local ok, err = pcall(extmod[stage_name], snapshot[ext_name], ...)
         if not ok then
-          vim.notify(
-            string.format("[Finni] Extension %s %s error: %s", ext_name, stage_name, err),
-            vim.log.levels.ERROR
-          )
+          log.error("Extension `%s` %s error: %s", ext_name, stage_name, err)
         end
       end
     end
