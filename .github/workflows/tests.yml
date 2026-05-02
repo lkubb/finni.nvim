@@ -49,6 +49,7 @@ jobs:
           - nvim_tag: v0.10.4
           - nvim_tag: v0.11.0
           - nvim_tag: v0.11.4
+          - nvim_tag: v0.12.1
           - nvim_tag: nightly
 
     name: Run tests

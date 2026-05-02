@@ -715,6 +715,8 @@ end
 ---   Undefined if a buffer with the same UUID was already scheduled.
 function M.restore_soon(buf, snapshot, state_dir, opts)
   if scheduled_restores[buf.uuid] then
+    -- NOTE: Can also happen when two sessions share the same buffer uuid (no reset when switching
+    --       before) and are loaded in rapid succession.
     log.error(
       "Scheduled restoration of buf `%s` (UUID: `%s`) twice! Most likely an internal error, skipping",
       buf.name,
