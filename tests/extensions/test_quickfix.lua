@@ -57,7 +57,7 @@ local qfl = {
 T["quickfix lists are restored"] = function()
   reset()
   MiniTest.finally(reset) -- post_case is not run on error ?!
-  vim.iter(qfl):each(function(qflist)
+  vim.iter(qfl):each(function(qflist) ---@diagnostic disable-line: redundant-parameter
     child.fn.setqflist({}, " ", qflist)
   end)
   child.cmd("3 chistory")
@@ -94,7 +94,7 @@ end
 T["quickfix window is restored in current tab"] = function()
   reset()
   MiniTest.finally(reset)
-  vim.iter(qfl):each(function(qflist)
+  vim.iter(qfl):each(function(qflist) ---@diagnostic disable-line: redundant-parameter
     child.fn.setqflist({}, " ", qflist)
   end)
   child.cmd("copen")
@@ -112,7 +112,7 @@ end
 T["quickfix window is restored in other tab"] = function()
   reset()
   MiniTest.finally(reset)
-  vim.iter(qfl):each(function(qflist)
+  vim.iter(qfl):each(function(qflist) ---@diagnostic disable-line: redundant-parameter
     child.fn.setqflist({}, " ", qflist)
   end)
   child.cmd("copen")

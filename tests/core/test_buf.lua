@@ -177,12 +177,13 @@ T["save_modified"] = MiniTest.new_set()
 
 ---@param state_dir string
 ---@param bufs? integer[]
+---@return table<finni.core.BufUUID, true?>?
 local function save_modified(state_dir, bufs)
   ---@diagnostic disable-next-line: redefined-local
   return child.lua_func(function(state_dir, bufs)
     ---@diagnostic disable-next-line: redefined-local
     local buf = require("finni.core.buf")
-    local buf_ctx = vim.iter(bufs or vim.api.nvim_list_bufs()):map(buf.ctx):totable()
+    local buf_ctx = vim.iter((bufs or vim.api.nvim_list_bufs())):map(buf.ctx):totable() ---@diagnostic disable-line: redundant-parameter
     return buf.save_modified(state_dir, buf_ctx)
   end, state_dir, bufs)
 end

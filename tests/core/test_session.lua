@@ -1,4 +1,4 @@
----@diagnostic disable: need-check-nil
+---@diagnostic disable: need-check-nil, assign-type-mismatch
 ---@using finni.tests
 local util = require("finni.util")
 ---@type finni.tests.helpers
@@ -32,7 +32,6 @@ local function new_sess(name, opts, tab)
       vim.fs.joinpath(tmp, name .. ".json"),
       vim.fs.joinpath(tmp, "state"),
       vim.fs.joinpath(tmp, "context")
-    ---@diagnostic disable-next-line: assign-type-mismatch
     local sess = require("finni.core.session").create_new(
       name,
       session_file,
@@ -69,19 +68,24 @@ end
 --- Session objects are not serializable, wrapper to query the result's name
 ---@param func keyof finni.core.session
 local function get_sess(func, ...)
-  return child.lua_func(function(func, ...) ---@diagnostic disable-line: redefined-local
-    ---@diagnostic disable-next-line: undefined-field
-    local res = require("finni.core.session")[func](...)
-    if vim.list_contains({ "get_all", "get_tabs" }, func) then
-      return vim
-        .iter(pairs(res or {}))
-        :map(function(_, sess)
-          return sess.name
-        end)
-        :totable()
-    end
-    return res and res.name
-  end, func, ...)
+  return child.lua_func(
+    ---@return any?
+    function(func, ...) ---@diagnostic disable-line: redefined-local
+      local fun = require("finni.core.session")[func] ---@type function
+      local res = fun(...)
+      if vim.list_contains({ "get_all", "get_tabs" }, func) then
+        return vim
+          .iter(pairs(res or {})) ---@diagnostic disable-line: redundant-parameter
+          :map(function(_, sess)
+            return sess.name
+          end)
+          :totable()
+      end
+      return res and res.name
+    end,
+    func,
+    ...
+  )
 end
 
 T["get_current/get_active"] = MiniTest.new_set({ parametrize = { { false }, { true } } })
@@ -329,8 +333,8 @@ T["Session:update"] = function()
   eq(opts.autosave_interval, 1338)
   eq(opts.autosave_enabled, false)
   eq(opts.autosave_notify, false)
-  eq(opts.buf_filter(), 43)
-  eq(opts.tab_buf_filter(), 43)
+  eq(opts.buf_filter(1, {}), 43)
+  eq(opts.tab_buf_filter(1, 1, {}), 43)
   eq(opts.jumps, false)
   eq(opts.changelist, false)
   eq(opts.global_marks, false)
@@ -389,7 +393,7 @@ T["Session:is_attached"] = function()
       sess.session_file,
       sess.state_dir,
       sess.context_dir,
-      sess:opts()
+      sess:opts() ---@diagnostic disable-line: param-type-mismatch
     )
     local res = { testsess:is_attached() } ---@diagnostic disable-line: redefined-local
     testsess = testsess:restore()

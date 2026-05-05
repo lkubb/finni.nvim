@@ -53,11 +53,11 @@ M.on_pre_load = function(data, _, buflist)
     lists, pos = { { items = data } }, 1
   end
   vim.fn.setqflist({}, "f") -- ensure lists are always cleared
-  vim.iter(lists):each(function(qflist)
+  vim.iter(lists):each(function(qflist) ---@diagnostic disable-line: redundant-parameter
     qflist.context = qflist.context or ""
     qflist.quicktextfunc = qflist.quicktextfunc or ""
     qflist.items = vim
-      .iter(qflist.items or {})
+      .iter(qflist.items or {}) ---@diagnostic disable-line: redundant-parameter
       :map(function(item)
         if item.filename then
           item.filename = buflist[item.filename] or item.filename
@@ -101,7 +101,8 @@ M.load_win = function(winid, config, win)
   if config.quicker then
     ---@diagnostic disable-next-line: need-check-nil
     local view = win.view or { lnum = win.cursor[1], col = win.cursor[2] }
-    require("quicker").open({
+    require("quicker").open({ ---@diagnostic disable-line: unresolved-require
+      ---@diagnostic disable-next-line: missing-fields
       open_cmd_mods = { vertical = true },
       height = win.height, -- FIXME: consider scale?
       ---@diagnostic disable-next-line: need-check-nil

@@ -44,7 +44,7 @@ end
 ---@return table<string, FileMark?> global_marks #
 local function get_global_marks()
   return vim
-    .iter(vim.fn.getmarklist())
+    .iter(vim.fn.getmarklist()) ---@diagnostic disable-line: redundant-parameter
     :filter(function(mark)
       return not mark.mark:find("%d$")
     end)
@@ -126,7 +126,7 @@ local function wshada_hist(opts, snapshot_ctx, snapshot)
     return snapshot
   end
   local shada_opt = vim
-    .iter(pairs(hist_map))
+    .iter(pairs(hist_map)) ---@diagnostic disable-line: redundant-parameter
     :map(function(conf, char)
       local should_skip = conf == "expr_history" or conf == "debug_history"
       if opts[conf] then
@@ -161,7 +161,7 @@ local function wshada_hist(opts, snapshot_ctx, snapshot)
       { shada = shada_opt .. ",'0", shadafile = shada_file },
       -- Try to merge with existing shada file
       vim.cmd.wshada,
-      { vim.fn.fnameescape(shada_file) }
+      { args = { vim.fn.fnameescape(shada_file) } }
     )
   else
     -- `lazyredraw` should not be necessary, but better be safe.
@@ -190,7 +190,7 @@ local function wshada_hist(opts, snapshot_ctx, snapshot)
           { shada = shada_opt .. ",'0", shadafile = shada_file },
           -- Try to merge with existing shada file
           vim.cmd.wshada,
-          { vim.fn.fnameescape(shada_file) }
+          { args = { vim.fn.fnameescape(shada_file) } }
         )
       end, function()
         vim.api.nvim_set_current_win(curwin)
@@ -329,9 +329,9 @@ local function create(target_tabpage, opts, snapshot_ctx)
             or vim.api.nvim_buf_get_mark(bufnr, '"') --[[@as AnonymousMark]],
           in_win = #in_win > 0,
           uuid = ctx.uuid,
-          changelist = util.opts.coalesce_auto("changelist", false, opts, Config.session)
+          changelist = util.opts.coalesce_auto("changelist", nil, opts, Config.session)
             and Buf.parse_changelist(ctx),
-          marks = util.opts.coalesce_auto("local_marks", false, opts, Config.session)
+          marks = util.opts.coalesce_auto("local_marks", nil, opts, Config.session)
             and Buf.get_marks(ctx),
           bt = bt ~= "" and bt or nil,
         }
@@ -366,7 +366,8 @@ local function create(target_tabpage, opts, snapshot_ctx)
       local winlayout = vim.fn.winlayout(tabnr)
       ---@type Snapshot.TabData
       local tab = {
-        cwd = (target_tabpage or vim.fn.haslocaldir(-1, tabnr) == 1) and vim.fn.getcwd(-1, tabnr),
+        cwd = (target_tabpage or vim.fn.haslocaldir(-1, tabnr) == 1) and vim.fn.getcwd(-1, tabnr)
+          or nil,
         current = current_tabpage == tabpage,
         options = util.opts.get_tab(tabpage, opts.options or Config.session.options),
         wins = require("finni.core.layout").add_win_info_to_layout(
@@ -483,13 +484,13 @@ function M.restore(snapshot, opts, snapshot_ctx)
       util.opts.coalesce_auto(hist_conf, snapshot.global[hist_conf], opts, Config.session)
   end
   local load_hist = vim
-    .iter(hist_map)
+    .iter(hist_map) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return opts[v]
     end)
     :any(function(v)
       return v
-    end)
+    end) ---@type boolean
 
   _is_loading = true
 
@@ -555,7 +556,7 @@ function M.restore(snapshot, opts, snapshot_ctx)
       util.try_log(function()
         -- Clear all global marks that were not defined in the session
         vim
-          .iter(vim.fn.getmarklist())
+          .iter(vim.fn.getmarklist()) ---@diagnostic disable-line: redundant-parameter
           :map(function(mark)
             return mark.mark:sub(2, 2)
           end)
@@ -673,7 +674,9 @@ function M.restore(snapshot, opts, snapshot_ctx)
         --        jumplist instead or handling this situation during save.
         if not last_bufnr then
           -- We might not have restored it yet since it wasn't in a window
-          for buf in vim.iter(vim.tbl_values(snapshot.buffers)):rev() do
+          for buf in
+            vim.iter(vim.tbl_values(snapshot.buffers)):rev() ---@diagnostic disable-line: redundant-parameter
+          do
             if buf.loaded then
               last_bufnr = Buf.added(buf.name, buf.uuid).bufnr
               break
@@ -708,25 +711,26 @@ function M.restore(snapshot, opts, snapshot_ctx)
 
   -- First, create an ordered list of all window IDs at this point, beginning with those in the visible tabpage.
   local restored_wins = vim.api.nvim_tabpage_list_wins(0)
+  local all_restored_wins ---@type Iter
   if snapshot.tab_scoped then
-    restored_wins = vim.iter(restored_wins)
+    all_restored_wins = vim.iter(restored_wins) ---@diagnostic disable-line: redundant-parameter
   else
     -- FIXME: This assumes the snapshot was loaded with `reset`. It does not hurt to iterate over all
     --        windows since we check if the buffer inside was actually restored by us, but this could
     --        be written in a more efficient way for these cases.
     local othertab_wins = vim
-      .iter(vim.api.nvim_list_wins())
+      .iter(vim.api.nvim_list_wins()) ---@diagnostic disable-line: redundant-parameter
       :filter(function(win)
         return not vim.list_contains(restored_wins, win)
       end)
       :totable()
-    restored_wins = vim.iter(vim.list_extend(restored_wins, othertab_wins))
+    all_restored_wins = vim.iter(vim.list_extend(restored_wins, othertab_wins)) ---@diagnostic disable-line: redundant-parameter
   end
 
   -- Use a timer to rapidly execute autocmds for unfocused buffers/windows
   -- while not blocking the UI any longer than necessary.
-  ---@type uv.uv_timer_t
-  local edit_timer = assert(vim.uv.new_timer())
+  local edit_timer = vim.uv.new_timer()
+  assert(edit_timer)
   local edited_bufs = { [curbuf] = true } ---@type table<BufNr, true?>
   -- Need to do this very fast (before LSP load) or quite slowly,
   -- otherwise some LSPs might be confused (basedpyright complained about "redundant open text document command").
@@ -734,9 +738,10 @@ function M.restore(snapshot, opts, snapshot_ctx)
   -- plugins in the initially focused buffer (loading with focus on a quickfix
   -- buffer + quicker.nvim and setting start to 0 caused an infinite loop)
   edit_timer:start(10, 1, function()
-    local win = restored_wins:next()
+    local win = all_restored_wins:next()
     if not win then
-      return edit_timer:stop()
+      edit_timer:stop()
+      return
     end
     vim.schedule(function()
       if not vim.api.nvim_win_is_valid(win) then

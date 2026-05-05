@@ -158,7 +158,7 @@ end
 function Session:update(opts)
   local update_autosave = false
   vim
-    .iter({
+    .iter({ ---@diagnostic disable-line: redundant-parameter
       "autosave_enabled",
       "autosave_interval",
       "autosave_notify",
@@ -201,7 +201,7 @@ function Session:update(opts)
     end
   end
   if update_autosave and self:is_attached() then
-    ---@cast self ActiveSession
+    ---@cast self ActiveSession<Session.Target>
     self:_setup_autosave()
   end
 end
@@ -214,8 +214,12 @@ function Session:restore(opts, snapshot)
     return self, false
   end
   log.trace("Loading session `%s`. Data: %s", self.name, snapshot)
-  local load_opts =
-    vim.tbl_extend("keep", self:opts() --[[@as table]], opts, { attach = false, reset = "auto" })
+  local load_opts = vim.tbl_extend(
+    "keep",
+    self:opts() --[[@as table]],
+    opts --[[@as table]],
+    { attach = false, reset = "auto" }
+  )
   local tabid = Snapshot.restore_as(self.name, snapshot, load_opts)
   if self.tab_scoped then
     self.tabid = assert(tabid, "Restored session defined as tab-scoped, but did not receive tabid")
@@ -406,7 +410,7 @@ function ActiveSession:autosave(opts, force)
     self,
     Config.session
   )
-  local save_opts = vim.tbl_extend("keep", { notify = notify }, opts)
+  local save_opts = vim.tbl_extend("keep", { notify = notify }, opts --[[@as table]])
   self:save(save_opts)
 end
 
@@ -501,10 +505,12 @@ local function list_active_tabpage_sessions(by_name)
   if not by_name then
     return tab_sessions
   end
-  return vim.iter(tab_sessions):fold({}, function(acc, k, v)
-    acc[v] = k
-    return acc
-  end)
+  return vim
+    .iter(tab_sessions) ---@diagnostic disable-line: redundant-parameter
+    :fold({}, function(acc, k, v)
+      acc[v] = k
+      return acc
+    end)
 end
 
 ---@param reason Session.DetachReasonBuiltin|string Reason to pass to detach handlers.
@@ -531,7 +537,7 @@ end
 local function detach_tabpage(target, reason, opts)
   if type(target) == "table" then
     local had_effect = false
-    vim.iter(target):each(function(v)
+    vim.iter(target):each(function(v) ---@diagnostic disable-line: redundant-parameter
       if detach_tabpage(v, reason, opts) then
         had_effect = true
       end
@@ -543,13 +549,14 @@ local function detach_tabpage(target, reason, opts)
   if type(target) == "string" then
     name, tabid = target, find_tabpage_for_session(target)
   else
-    name, tabid = tab_sessions[target], target
+    name, tabid = tab_sessions[target], target ---@diagnostic disable-line: undefined-field
   end
   -- not (tabid and name) didn't work for emmylua to assert tabid
   if not tabid or not name then
     return false
   end
-  assert(sessions[name], "Tabpage session not known, this is likely a bug"):detach(reason, opts)
+  local s = assert(sessions[name], "Tabpage session not known, this is likely a bug")
+  s:detach(reason, opts)
   return true
 end
 
@@ -607,6 +614,7 @@ function M.create_new(name, session_file, state_dir, context_dir, opts, tabid)
   if tabid then
     return Session.new(name, session_file, state_dir, context_dir, opts, tabid)
   end
+  ---@diagnostic disable-next-line: return-type-mismatch
   return Session.new(name, session_file, state_dir, context_dir, opts)
 end
 
@@ -633,13 +641,15 @@ end
 
 ---@return table<TabID, ActiveSession<Session.TabTarget>>
 function M.get_tabs()
-  return vim.iter(pairs(list_active_tabpage_sessions())):fold({}, function(res, tabid, name)
-    res[tabid] = assert(
-      sessions[name].tabid == tabid and sessions[name],
-      "Tabpage session not known or points to wrong tab, this is likely a bug"
-    )
-    return res
-  end)
+  return vim
+    .iter(pairs(list_active_tabpage_sessions())) ---@diagnostic disable-line: redundant-parameter
+    :fold({}, function(res, tabid, name)
+      res[tabid] = assert(
+        sessions[name] and sessions[name].tabid == tabid and sessions[name],
+        "Tabpage session not known or points to wrong tab, this is likely a bug"
+      )
+      return res
+    end)
 end
 
 ---@generic T: Session.Target
@@ -759,7 +769,7 @@ function M.detach(target, reason, opts)
     return detach_tabpage(target, reason, opts)
   elseif target_type == "table" then
     -- stylua: ignore
-    return vim.iter(target):map(function(v) return M.detach(v, reason, opts) end):any(function(v) return v end)
+    return vim.iter(target):map(function(v) return M.detach(v, reason, opts) end):any(function(v) return v end)  ---@diagnostic disable-line: redundant-parameter
   end
   log.error("Invalid detach target: `%s`", target)
   return false

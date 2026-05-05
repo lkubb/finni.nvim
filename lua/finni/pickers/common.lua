@@ -76,7 +76,7 @@ end
 ---@return {project: string, session: string}[]
 function Picker:list_auto(project_name)
   return vim
-    .iter(require("finni.auto").list({ project_name = project_name }))
+    .iter(require("finni.auto").list({ project_name = project_name })) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return { session = v, project = project_name }
     end)

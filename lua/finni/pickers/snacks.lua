@@ -34,7 +34,7 @@ end
 ---@return {text: string, session_name: string}[]
 function SnacksFinni:manual_finder()
   return vim
-    .iter(self:list_manual())
+    .iter(self:list_manual()) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return { text = v, session_name = v }
     end)
@@ -68,7 +68,7 @@ end
 ---@return {text: string, project: string, session: string}[]
 function SnacksFinni:auto_all_finder()
   return vim
-    .iter(self:list_auto_all())
+    .iter(self:list_auto_all()) ---@diagnostic disable-line: redundant-parameter
     :map(function(s)
       return {
         project = s.project,
@@ -118,7 +118,7 @@ end
 function SnacksFinni:auto_finder(project_name)
   return function()
     return vim
-      .iter(self:list_auto(project_name))
+      .iter(self:list_auto(project_name)) ---@diagnostic disable-line: redundant-parameter
       :map(function(v)
         return { session = v.session, project = v.project, text = v.session }
       end)
@@ -160,7 +160,7 @@ end
 ---@return {text: string, project: string}[]
 function SnacksFinni:project_finder()
   return vim
-    .iter(self:list_projects())
+    .iter(self:list_projects()) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return { project = v, text = v }
     end)

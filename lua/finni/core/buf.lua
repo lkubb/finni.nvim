@@ -34,7 +34,7 @@ local IGNORE_LOCAL_MARKS = {
 
 --- Keep track of bufs by name/uuid that are referenced in a snapshot,
 --- but not restored yet. Useful to force-restore them earlier if necessary.
----@type table<BufUUID|string, [fun(), integer, uv_timer_t]?>
+---@type table<BufUUID|string, [fun(), integer, uv.uv_timer_t]?>
 local scheduled_restores = {}
 
 --- Generate a UUID for a buffer.
@@ -43,6 +43,7 @@ local scheduled_restores = {}
 ---@return BufUUID
 local function generate_uuid()
   if not seeded then
+    ---@diagnostic disable-next-line: access-invisible
     math.randomseed(os.time())
     seeded = true
   end
@@ -72,15 +73,17 @@ function M.get_marks(ctx)
     end
     log.debug("Buffer %s not yet initialized, but did not remember marks", ctx)
   end
-  return vim.iter(vim.fn.getmarklist(ctx.bufnr)):fold({}, function(acc, mark)
-    local n = mark.mark:sub(2, 2)
-    -- Cannot restore last change location mark, so filter it out.
-    if not IGNORE_LOCAL_MARKS[n] then
-      -- Convert (1, 1) to (1, 0) indexing
-      acc[mark.mark:sub(2, 2)] = { mark.pos[2], mark.pos[3] - 1 }
-    end
-    return acc
-  end)
+  return vim
+    .iter(vim.fn.getmarklist(ctx.bufnr)) ---@diagnostic disable-line: redundant-parameter
+    :fold({}, function(acc, mark)
+      local n = mark.mark:sub(2, 2)
+      -- Cannot restore last change location mark, so filter it out.
+      if not IGNORE_LOCAL_MARKS[n] then
+        -- Convert (1, 1) to (1, 0) indexing
+        acc[mark.mark:sub(2, 2)] = { mark.pos[2], mark.pos[3] - 1 }
+      end
+      return acc
+    end)
 end
 
 --- Get a list of changelist entries and the current changelist position (from most recent back).
@@ -341,7 +344,7 @@ local function restore_buf_cursor(ctx, win_only)
       "Failed to restore cursor for buffer %s in window %s: %s",
       ctx,
       current_win,
-    }, current_win, last_pos)
+    }, current_win, last_pos --[[@as [integer,integer] ]])
   end
   -- Ensure we break the chain of window-specific cursor recoveries once all windows
   -- have been visited
@@ -444,9 +447,11 @@ local function finish_restore_buf(ctx, buf, snapshot)
   if ctx.name ~= "" and buf.changelist then
     local now = os.time() - #buf.changelist
     local change_shada = util.shada.new()
-    vim.iter(ipairs(buf.changelist[1])):each(function(i, change)
-      change_shada:add_change(ctx.name, change[1], change[2], now + i)
-    end)
+    vim
+      .iter(ipairs(buf.changelist[1])) ---@diagnostic disable-line: redundant-parameter
+      :each(function(i, change)
+        change_shada:add_change(ctx.name, change[1], change[2], now + i)
+      end)
     -- There's no `:clearchanges`, need to clear all buffer-local marks.
     -- TODO: Restore them after
     vim.cmd.delmarks({ bang = true })
@@ -750,7 +755,7 @@ function M.restore_soon(buf, snapshot, state_dir, opts)
   -- Relying on CursorHold[I] events only would defer execution until neovim is focused,
   -- which is suboptimal, especially since it causes autosave warnings because the session
   -- is still loading. Cap restoration to <timeout>.
-  local timer = vim.defer_fn(restore_it, opts.timeout or 1000) ---@type uv_timer_t
+  local timer = vim.defer_fn(restore_it, opts.timeout or 1000) ---@type uv.uv_timer_t
   scheduled_restores[buf.uuid] = { restore_it, aucmd_id, timer }
   if buf.name ~= "" then
     scheduled_restores[buf.name] = { restore_it, aucmd_id, timer }
@@ -804,7 +809,7 @@ function M.save_modified(state_dir, bufs)
   -- Can't call :wundo when the cmd window (e.g. q:) is active, otherwise we receive
   -- E11: Invalid in command-line window
   -- TODO: Should we save modified buffers at all if we can't guarantee undo history?
-  local skip_wundo = vim.fn.getcmdwintype() ~= ""
+  local skip_wundo = vim.fn.getcmdwintype() ~= "" ---@type boolean
   for _, ctx in ipairs(modified_buffers) do
     -- Unrestored buffers should not overwrite the save file, but still be remembered
     -- unrestored are buffers that were not restored at all due to swapfile and being opened read-only

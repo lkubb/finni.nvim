@@ -59,8 +59,8 @@ end
 
 ---@return CommitData
 local function save_commit()
-  local buf = require("neogit.buffers.commit_view").instance
-  ---@diagnostic disable-next-line: need-check-nil, undefined-field
+  ---@diagnostic disable-next-line: assign-type-mismatch
+  local buf = require("neogit.buffers.commit_view").instance ---@type CommitViewBuffer
   local commit_id, filter = buf.commit_info.commit_arg, buf.item_filter
   return {
     commit_id = commit_id,
@@ -88,7 +88,7 @@ function M.save_win(winid)
     error("Unsupported view")
   end
   ngrepo.instance(default_cwd) -- reset the default
-  sav.cwd, sav.ft, sav.default_cwd = cwd, ft, default_cwd
+  sav.cwd, sav.ft, sav.default_cwd = cwd, ft, default_cwd ---@diagnostic disable-line: inject-field
   return sav
 end
 
@@ -129,7 +129,7 @@ function M.load_win(winid, config, win)
   vim.api.nvim_set_current_win(winid)
   if config.ft == "NeogitStatus" then
     open_status(config, win)
-  elseif config.ft == "NeogitCommitView" then
+  elseif config.ft == "NeogitCommitView" then ---@diagnostic disable-line: unnecessary-if
     open_commit(config)
   -- elseif config.ft == "NeogitLogView" then
   --   open_log(config, win)

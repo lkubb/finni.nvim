@@ -15,6 +15,7 @@ local ldump_mt = {}
 
 --- Serialization library, can be called directly.
 --- Serialize the given value to a string, that can be deserialized via `load`.
+--- @class ldump
 --- @overload fun(value: any): string
 local ldump = setmetatable({}, ldump_mt)
 

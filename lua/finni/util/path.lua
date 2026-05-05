@@ -95,6 +95,7 @@ end
 ---@param ... string Path segments to append to the stdpath in OS-specific format
 ---@return string
 function M.get_stdpath_filename(stdpath, ...)
+  ---@diagnostic disable-next-line: param-type-mismatch
   local ok, dir = pcall(vim.fn.stdpath, stdpath)
   if not ok then
     if stdpath == "log" then
@@ -178,10 +179,10 @@ end
 
 ---@generic T
 ---@param dir string Directory to list
----@param predicate (fun(entry: uv.fs_readdir.entry, dir: string, depth: integer): T?, boolean?)? #
+---@param predicate? fun(entry: uv.fs_readdir.entry, dir: string, depth: integer): T?, boolean? #
 ---   Function to map list results to return value.
 ---   If unspecified, returns a list of file names.
----@param order_by ("filename"|"creation_time"|"modification_time"|fun(a: [string, T], b: [string, T]): boolean)? #
+---@param order_by? "filename"|"creation_time"|"modification_time"|fun(a: [string, T], b: [string, T]): boolean #
 ---   Order the returned list in some fashion.
 ---   If a function is passed, it receives a tuple of [full_path, predicate_return].
 ---@return T[] mapped_matches #
@@ -255,7 +256,7 @@ function M.ls(dir, predicate, order_by)
     table.sort(ret, order_by)
   end
   return vim
-    .iter(ret)
+    .iter(ret) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return v[2]
     end)

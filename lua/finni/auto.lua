@@ -58,7 +58,7 @@ end
 --- Merge save/load opts for passing into core funcs.
 ---@generic T: (SaveOpts & PassthroughOpts|LoadOpts & PassthroughOpts)?
 ---@param opts? T Opts passed to the function
----@param cur ActiveAutosession|AutosessionContext Autosession to operate on
+---@param cur ActiveAutosession<Session.Target>|AutosessionContext Autosession to operate on
 ---@param defaults? T Call-specific defaults
 ---@param forced? table<string, any> Call-specific forced params
 ---@return T - nil merged Merged opts
@@ -67,9 +67,11 @@ local function core_opts(opts, cur, defaults, forced)
   return vim.tbl_extend(
     "force",
     Config.autosession.config --[[@as table]],
-    defaults or {},
+    defaults --[[@as table]]
+      or {},
     cur.config --[[@as table]],
-    opts or {},
+    opts --[[@as table]]
+      or {},
     forced or {},
     { meta = { autosession = cur } }
   )
@@ -368,7 +370,7 @@ function M.reload()
   local effective_cwd = util.auto.cwd()
   local autosession = get_ctx(effective_cwd)
   local cur = current_autosession() or nil
-  ---@cast cur ActiveAutosession?
+  ---@cast cur ActiveAutosession<Session.Target>?
   if not autosession then
     if cur then
       log.trace("Reload check result: New context disables active autosession")
@@ -382,7 +384,7 @@ function M.reload()
   end
   if
     cur
-    and cur.meta.autosession.project.name == autosession.project.name
+    and assert(cur.meta).autosession.project.name == autosession.project.name
     and cur.name == autosession.name
   then
     log.trace(
@@ -511,12 +513,12 @@ function monitor(autosession)
         -- if we're in the process of loading one
         return
       end
-      ---@cast cur ActiveAutosession
+      ---@cast cur ActiveAutosession<Session.Target>
       ---@diagnostic disable-next-line: undefined-field
       local lookahead = get_ctx(vim.v.event.directory)
       if
         not lookahead
-        or cur.meta.autosession.project.name ~= lookahead.project.name
+        or assert(cur.meta).autosession.project.name ~= lookahead.project.name
         or cur.name ~= lookahead.name
       then
         log.trace(
@@ -602,7 +604,7 @@ end
 function M.reset(opts)
   ---@type ResetOpts
   opts = opts or {}
-  ---@type Session?
+  ---@type Session<Session.Target>?
   local session
   if opts.cwd then
     local ctx = get_ctx((opts.cwd ~= true and opts.cwd) or util.auto.cwd())
@@ -623,7 +625,7 @@ function M.reset(opts)
     return
   end
   if session:is_attached() then
-    ---@cast session ActiveSession
+    ---@cast session ActiveSession<Session.Target>
     session = session:detach("delete", { reset = true })
   else
     opts.reload = false
@@ -753,10 +755,12 @@ function M.list_projects(opts)
     return opts.with_sessions and { project_name, util.path.join(dir, entry.name) } or project_name
   end, Config.load.order)
   if opts.with_sessions then
-    return vim.iter(res):fold({}, function(acc, v)
-      acc[v[1]] = M.list({ project_dir = v[2] })
-      return acc
-    end)
+    return vim
+      .iter(res) ---@diagnostic disable-line: redundant-parameter
+      :fold({}, function(acc, v)
+        acc[v[1]] = M.list({ project_dir = v[2] })
+        return acc
+      end)
   end
   return res
 end
@@ -875,7 +879,9 @@ function M.migrate_projects(opts)
   for name, typ in vim.fs.dir(opts.old_root) do
     if typ == "directory" then
       local project_dir = util.path.join(opts.old_root, name)
-      local save_files = util.path.ls(project_dir, function(entry, _)
+      ---@param entry uv.fs_readdir.entry
+      ---@return [string, string, string]?
+      local pred = function(entry, _)
         if entry.type ~= "file" then
           return
         end
@@ -891,7 +897,8 @@ function M.migrate_projects(opts)
           serialized_name .. ".json",
           util.path.escape(deserialized_name) .. ".json",
         }
-      end)
+      end
+      local save_files = util.path.ls(project_dir, pred) ---@type [string, string, string][]
       if #save_files == 1 and save_files[1][1] == "" then
         save_files = {}
       end
@@ -957,9 +964,9 @@ function M.info(opts)
   local is_auto = false
   local autosession_config, autosession_data
   if cur and is_autosession(cur) then
-    ---@cast cur ActiveAutosession
+    ---@cast cur ActiveAutosession<Session.Target>
     is_auto = true
-    autosession_config = cur.meta.autosession
+    autosession_config = assert(cur.meta).autosession
     autosession_data = opts.with_snapshot
       and util.path.load_json_file(
         util.path.get_autosession_file(cur.name, autosession_config.project.data_dir)

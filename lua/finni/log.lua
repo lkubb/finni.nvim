@@ -104,7 +104,7 @@ end
 ---@return string src_path Path to the file that contains the call
 ---@return integer src_line Line in `src_path` that contains the call
 local function get_call_source(stacklevel)
-  local info = debug.getinfo(stacklevel + 1, "Sl")
+  local info = assert(debug.getinfo(stacklevel + 1, "Sl"))
   return info.source:sub(2), info.currentline
 end
 
@@ -114,7 +114,7 @@ end
 ---@return integer src_line_start First line of function definition in `src_path`
 ---@return integer src_line_end Last line of function definition in `src_path`
 local function get_source(func)
-  local info = debug.getinfo(func, "Sl")
+  local info = assert(debug.getinfo(func, "Sl"))
   return info.source:sub(2), info.linedefined, info.lastlinedefined
 end
 
@@ -125,7 +125,7 @@ end
 ---@return Line
 local function fmt(level, msg, ...)
   ---@diagnostic disable-next-line: undefined-field
-  local timestamp = vim.uv.clock_gettime("realtime").sec
+  local timestamp = (vim.uv.clock_gettime("realtime") or {}).sec or 0
   local hrtime = vim.uv.hrtime()
   local args = vim.F.pack_len(...)
   if args.n == 1 and type(args[1]) == "function" then

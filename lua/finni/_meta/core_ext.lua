@@ -64,7 +64,7 @@
 ---@alias ext.HookOpts Session.Init.Paths & Session.Init.Autosave & Session.Init.Meta & snapshot.CreateOpts & Session.KnownHookOpts.SideEffects & Session.KnownHookOpts.Dir & PassthroughOpts
 
 --- A function that, after being registered, is called before/after a snapshot is restored.
----@alias ext.LoadHook fun(name: string, opts: ext.HookOpts)[]
+---@alias ext.LoadHook fun(name: string, opts: ext.HookOpts)
 
 --- A function that, after being registered, is called before/after a snapshot is saved.
----@alias ext.SaveHook fun(name: string, opts: ext.HookOpts, target_tabpage: TabID?)[]
+---@alias ext.SaveHook fun(name: string, opts: ext.HookOpts, target_tabpage: TabID?)

@@ -18,7 +18,7 @@ local pickers = {
 }
 
 getmetatable(T).opts.parametrize = vim
-  .iter(vim.tbl_keys(pickers))
+  .iter(vim.tbl_keys(pickers)) ---@diagnostic disable-line: redundant-parameter
   :map(function(v)
     return { v }
   end)

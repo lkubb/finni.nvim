@@ -55,7 +55,7 @@ end
 ---@return {text: string, session_name: string}[]
 function MiniFinni:manual_finder()
   return vim
-    .iter(self:list_manual())
+    .iter(self:list_manual()) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return { text = v, session_name = v }
     end)
@@ -83,7 +83,7 @@ end
 ---@return {text: string, project: string, session: string}[]
 function MiniFinni:auto_all_finder()
   return vim
-    .iter(self:list_auto_all())
+    .iter(self:list_auto_all()) ---@diagnostic disable-line: redundant-parameter
     :map(function(s)
       local project_text = s.project
       if project_text:len() > 51 then
@@ -121,7 +121,7 @@ end
 function MiniFinni:auto_finder(project_name)
   return function()
     return vim
-      .iter(self:list_auto(project_name))
+      .iter(self:list_auto(project_name)) ---@diagnostic disable-line: redundant-parameter
       :map(function(v)
         return { session = v.session, project = v.project, text = v.session }
       end)
@@ -159,7 +159,7 @@ end
 ---@return {text: string, project: string}[]
 function MiniFinni:project_finder()
   return vim
-    .iter(self:list_projects())
+    .iter(self:list_projects()) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return { project = v, text = v }
     end)
