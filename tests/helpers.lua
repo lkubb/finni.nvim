@@ -16,7 +16,7 @@ _G.MiniTest = _G.MiniTest
 ---@namespace finni.tests
 ---@using finni.core
 
-local ldump = require("tests._ldump")
+local ldump = require("tests._ldump") ---@diagnostic disable-line: unresolved-require
 local path = require("finni.util.path")
 
 -- NOTE: ldump.preserve_modules should not be set, it inversely queries package.loaded. Some
@@ -53,11 +53,21 @@ end
 
 function Proxy:__newindex(k, v)
   -- Dumping a function with upvals takes more time (~50%), so skip it if possible.
-  local hasupvals = debug.getinfo(v, "u").nups > 0
-  self._child.lua_func(function(mod, attr, val, upvals)
-    ---@diagnostic disable-next-line: need-check-nil
-    require(mod)[attr] = upvals and loadstring(val)() or loadstring(val)
-  end, self._mod, k, hasupvals and ldump(v) or string.dump(v), hasupvals)
+  local hasupvals = assert(debug.getinfo(v, "u")).nups > 0
+  self._child.lua_func(
+    ---@param mod string
+    ---@param attr string
+    ---@param val string
+    ---@param upvals boolean
+    function(mod, attr, val, upvals)
+      ---@diagnostic disable-next-line: need-check-nil
+      require(mod)[attr] = upvals and loadstring(val)() or loadstring(val)
+    end,
+    self._mod,
+    k,
+    hasupvals and ldump(v) or string.dump(v),
+    hasupvals
+  )
 end
 
 --- Snapshot with helper methods
@@ -83,7 +93,7 @@ function Snapshot:win(winnr, tabnr)
   local win = assert(
     self:wins(tabnr and { tabnr } or nil)[winnr],
     ("Missing win number %s%s"):format(winnr, tabnr and (" in tab %s"):format(tabnr) or "")
-  )
+  ) ---@type layout.WinInfo
   return win
 end
 
@@ -184,7 +194,9 @@ M.ex = {
   ok = MiniTest.new_expectation("truish", check_booleanish(true), booleanish_context(true)),
   no = MiniTest.new_expectation("falsy", check_booleanish(false), booleanish_context(false)),
   contains = MiniTest.new_expectation("list contains", function(list, ...)
-    for val in vim.iter({ ... }) do
+    for val in
+      vim.iter({ ... }) ---@diagnostic disable-line: redundant-parameter
+    do
       if not vim.list_contains(list, val) then
         return false
       end
@@ -192,7 +204,9 @@ M.ex = {
     return true
   end, function(list, ...)
     local fails = {}
-    for val in vim.iter({ ... }) do
+    for val in
+      vim.iter({ ... }) ---@diagnostic disable-line: redundant-parameter
+    do
       if not vim.list_contains(list, val) then
         fails[#fails + 1] = val
       end
@@ -363,6 +377,7 @@ local function new_child(init_opts)
         end
       end
       child.init = ldump(init)
+      ---@cast child.init string
       child._init_hash = vim.fn.sha256(child.init)
     end
 
@@ -455,14 +470,14 @@ local function new_child(init_opts)
 
   --- Filter child log messages by level and/or pattern.
   ---@param spec? {level?: finni.log.ConfigLevel, pattern?: string}
-  ---@return string[] log_msgs Filtered log messages
+  ---@return finni.log.Line[] log_msgs Filtered log messages
   child.filter_log = function(spec)
     local log = child.g._LOG
     if not log or log == vim.NIL then
       return {}
     end
     spec = spec or {}
-    log = vim.iter(log)
+    log = vim.iter(log) ---@diagnostic disable-line: redundant-parameter
     if spec.level then
       local match_level = spec.level:upper()
       log = log:filter(function(it)
@@ -573,7 +588,7 @@ local function new_child(init_opts)
     local screenshot = child.get_screenshot()
     return table.concat(
       vim
-        .iter(screenshot.text)
+        .iter(screenshot.text) ---@diagnostic disable-line: redundant-parameter
         :map(function(cols)
           return table.concat(cols, "")
         end)
@@ -595,7 +610,7 @@ local function new_child(init_opts)
         or function(buf)
           -- child.b[buf] does not work
           local ok, ctx = pcall(child.api.nvim_buf_get_var, buf or 0, "finni_ctx")
-          return (ok and ctx or {}).uuid == ref.uuid
+          return (ok and ctx or {}).uuid == ref.uuid ---@diagnostic disable-line: undefined-field
         end
       for _, buf in ipairs(child.api.nvim_list_bufs()) do
         if matchit(buf) then
@@ -615,7 +630,7 @@ local function new_child(init_opts)
 
   --- Return list of matching buffers on child
   ---@param flt? string|fun(bufnr: integer): boolean Predicate function
-  ---@return {name: string, bufnr: integer}[] buflist
+  ---@return {name: string, bufnr: integer, uuid?: string}[] buflist
   child.filter_bufs = function(flt)
     flt = flt or function()
       return true
@@ -628,14 +643,14 @@ local function new_child(init_opts)
     end
 
     return vim
-      .iter(child.api.nvim_list_bufs())
+      .iter(child.api.nvim_list_bufs()) ---@diagnostic disable-line: redundant-parameter
       :filter(flt)
       :map(function(bufnr)
         local ok, ctx = pcall(child.api.nvim_buf_get_var, bufnr, "finni_ctx")
         return {
           name = child.api.nvim_buf_get_name(bufnr),
           bufnr = bufnr,
-          uuid = (ok and ctx or {}).uuid,
+          uuid = (ok and ctx or {}).uuid, ---@diagnostic disable-line: undefined-field
         }
       end)
       :totable()
@@ -654,11 +669,15 @@ local function new_child(init_opts)
       local all_ptrns = { ... }
       local _ok = pcall(child.wait, function()
         local text = child.get_screentext()
-        return vim.iter(all_ptrns):all(function(any_ptrns)
-          return vim.iter(type(any_ptrns) ~= "table" and { any_ptrns } or any_ptrns):any(function(p)
-            return (text:find(p) and true or false) == should_match
+        return vim
+          .iter(all_ptrns) ---@diagnostic disable-line: redundant-parameter
+          :all(function(any_ptrns)
+            return vim
+              .iter(type(any_ptrns) ~= "table" and { any_ptrns } or any_ptrns) ---@diagnostic disable-line: redundant-parameter
+              :any(function(p)
+                return (text:find(p) and true or false) == should_match
+              end)
           end)
-        end)
       end, nil, "Text not found")
       return _ok
     end
@@ -671,12 +690,12 @@ local function new_child(init_opts)
     return ("Patterns:\n    %s\n\nScreen:\n%s"):format(
       table.concat(
         vim
-          .iter(all_ptrns)
+          .iter(all_ptrns) ---@diagnostic disable-line: redundant-parameter
           :map(function(any_ptrns)
             return "Any of: "
               .. table.concat(
                 vim
-                  .iter(type(any_ptrns) ~= "table" and { any_ptrns } or any_ptrns)
+                  .iter(type(any_ptrns) ~= "table" and { any_ptrns } or any_ptrns) ---@diagnostic disable-line: redundant-parameter
                   :map(function(p)
                     return ("`%s`"):format(p)
                   end)

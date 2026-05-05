@@ -18,19 +18,21 @@
   },
   "workspace": {
     "ignoreGlobs": [
-      "**/*_spec.lua"
+      "**/*_spec.lua",
+      "**/busted.lua",
+      "**/lazy/minit.lua"
     ],
     "library": [
       "$VIMRUNTIME",
-      "./deps/fzf-lua",
-      "./deps/gitsigns.nvim",
-      "./deps/luv",
-      "./deps/mini.nvim",
-      "./deps/neogit",
-      "./deps/oil.nvim",
-      "./deps/plenary.nvim",
-      "./deps/snacks.nvim",
-      "./deps/telescope.nvim"
+      "./deps/fzf-lua/lua",
+      "./deps/gitsigns.nvim/lua",
+      "./deps/luv/library",
+      "./deps/mini.nvim/lua",
+      "./deps/neogit/lua",
+      "./deps/oil.nvim/lua",
+      "./deps/plenary.nvim/lua",
+      "./deps/snacks.nvim/lua",
+      "./deps/telescope.nvim/lua"
     ]
   }
 }

@@ -79,13 +79,13 @@
 --- Function that derives autosession configuration from a path.
 --- The default implementation calls into all other autosession hooks
 --- that can be overridden in the config.
----@alias SpecHook fun(cwd: string): auto.AutosessionSpec?
+---@alias SpecHook fun(cwd: string): finni.auto.AutosessionSpec?
 --- Function that derives workspace root and git-tracked status from a path.
 ---@alias WorkspaceHook fun(cwd: string): [string, boolean]
 --- Function that derives the project name from output of WorkspaceHook.
----@alias ProjectNameHook fun(workspace: string, git_info: auto.AutosessionSpec.GitInfo?): string
+---@alias ProjectNameHook fun(workspace: string, git_info: finni.auto.AutosessionSpec.GitInfo?): string
 --- Function that derives the session name from output of WorkspaceHook and ProjectNameHook.
----@alias SessionNameHook fun(meta: {cwd: string, workspace: string, project_name: string, git_info: auto.AutosessionSpec.GitInfo?}): string
+---@alias SessionNameHook fun(meta: {cwd: string, workspace: string, project_name: string, git_info: finni.auto.AutosessionSpec.GitInfo?}): string
 
 --- Function that decides whether an autosession should be processed further.
 --- Receives output of WorkspaceHook, ProjectNameHook and SessionNameHook.
@@ -93,7 +93,7 @@
 
 --- Function that can return autosession-specific load option overrides.
 --- Receives output of WorkspaceHook, ProjectNameHook and SessionNameHook.
----@alias LoadOptsHook fun(meta: {cwd: string, workspace: string, project_name: string, session_name: string}): auto.LoadOpts?
+---@alias LoadOptsHook fun(meta: {cwd: string, workspace: string, project_name: string, session_name: string}): finni.auto.LoadOpts?
 
 --- Specifies which project an autosession belongs to, its workspace root directory and name
 --- as well as configuration overrides specific to this autosession.

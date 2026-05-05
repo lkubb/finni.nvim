@@ -6,7 +6,7 @@ function M.on_save()
   if not package.loaded["dap"] then
     return nil
   end
-  local breakpoints = require("dap.breakpoints")
+  local breakpoints = require("dap.breakpoints") ---@diagnostic disable-line: unresolved-require
   local all_breakpoints = {}
   for bufnr, bps in pairs(breakpoints.get()) do
     local bufname = vim.api.nvim_buf_get_name(bufnr)
@@ -23,7 +23,7 @@ end
 --- Restore backed up breakpoints.
 ---@param data {breakpoints: any[]} Save data from `on_save`
 function M.on_post_load(data)
-  local dap = require("dap")
+  local dap = require("dap") ---@diagnostic disable-line: unresolved-require
   local cur_bufnr = vim.api.nvim_get_current_buf()
   local view = vim.fn.winsaveview()
 
@@ -35,7 +35,7 @@ function M.on_post_load(data)
     vim.api.nvim_win_set_buf(0, bufnr)
     local set_cursor = pcall(vim.api.nvim_win_set_cursor, 0, { bp.line, 0 })
     if set_cursor then
-      dap.set_breakpoint(bp.condition, bp.hit_condition, bp.log_message)
+      dap.set_breakpoint(bp.condition, bp.hit_condition, bp.log_message) ---@diagnostic disable-line: undefined-field
     end
   end
 

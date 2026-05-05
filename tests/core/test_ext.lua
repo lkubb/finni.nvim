@@ -20,7 +20,7 @@ T["hooks"]["add_hook/remove_hook"] = function(evt)
     _G.finni_testing_hook = function(...) ---@diagnostic disable-line: global-in-non-module
       vim.g.hook_params = { ... }
     end
-    require("finni.core.ext").add_hook(evt, finni_testing_hook)
+    require("finni.core.ext").add_hook(evt, finni_testing_hook) ---@diagnostic disable-line: param-type-mismatch
   end, evt)
   ext.dispatch(evt, "testsession", { foo = "bar" }) ---@diagnostic disable-line: param-type-mismatch
   local params = child.g.hook_params
@@ -28,7 +28,7 @@ T["hooks"]["add_hook/remove_hook"] = function(evt)
   child.g.hook_params = nil
 
   child.lua_func(function(evt) ---@diagnostic disable-line: redefined-local
-    require("finni.core.ext").remove_hook(evt, finni_testing_hook)
+    require("finni.core.ext").remove_hook(evt, finni_testing_hook) ---@diagnostic disable-line: param-type-mismatch
   end, evt)
   ext.dispatch(evt, "testsession", { foo = "bar" }) ---@diagnostic disable-line: param-type-mismatch
   eq(child.g.hook_params, vim.NIL)
@@ -43,18 +43,22 @@ local function init_ext(code, resession)
 end
 
 T["get() finni extension"] = function()
-  local res = child.with({
-    init = {
-      init_ext,
-      [[
+  local res = child.with(
+    {
+      init = {
+        init_ext,
+        [[
 return {foobar = true}
       ]],
+      },
     },
-  }, function(chld)
-    return chld.lua_func(function()
-      return require("finni.core.ext").get("testext")
-    end)
-  end)
+    ---@return finni.core.Extension?
+    function(chld)
+      return chld.lua_func(function()
+        return require("finni.core.ext").get("testext")
+      end)
+    end
+  )
   eq(res, { foobar = true })
 end
 
@@ -70,24 +74,29 @@ T["get() resession extension"]["fallback"] = function(require_fallback)
       },
     }
   end
-  local res, log = child.with({
-    config = config,
-    init = {
-      init_ext,
-      [[
+  local res, log = child.with(
+    {
+      config = config,
+      init = {
+        init_ext,
+        [[
 return {foobar = true}
       ]],
-      true,
+        true,
+      },
     },
-  }, function(chld)
-    local res = chld.lua_func(function() ---@diagnostic disable-line: redefined-local
-      return require("finni.core.ext").get("testext")
-    end)
-    local log = ---@diagnostic disable-line: redefined-local
-      chld.filter_log({ level = "warn", pattern = "Missing extension.*to true to avoid overhead" })
-    ---@diagnostic disable-next-line: redundant-return-value
-    return res, log
-  end)
+    ---@param chld Child
+    ---@return finni.core.Extension?
+    ---@return finni.log.Line[]
+    function(chld)
+      local res = chld.lua_func(function() ---@diagnostic disable-line: redefined-local
+        return require("finni.core.ext").get("testext")
+      end) ---@type finni.core.Extension?
+      local log = ---@diagnostic disable-line: redefined-local
+        chld.filter_log({ level = "warn", pattern = "Missing extension.*to true to avoid overhead" })
+      return res, log
+    end
+  )
   eq(res, { foobar = true })
   local log_test = require_fallback and some or none
   log_test(log)
@@ -129,45 +138,55 @@ return {config = function(extconf) if extconf and extconf.no_error then vim.g.ex
 end
 
 T["get() does not crash when loading ext errors"] = function()
-  local res, log = child.with({
-    init = {
-      init_ext,
-      "error('hi there')",
+  local res, log = child.with(
+    {
+      init = {
+        init_ext,
+        "error('hi there')",
+      },
     },
-  }, function(chld)
-    local res = chld.lua_func(function() ---@diagnostic disable-line: redefined-local
-      return require("finni.core.ext").get("testext")
-    end)
-    local log = chld.filter_log({ ---@diagnostic disable-line: redefined-local
-      level = "warn",
-      pattern = ".*Missing extension `testext` in namespace `finni`.*",
-    })
-    ---@diagnostic disable-next-line: redundant-return-value
-    return res, log
-  end)
+    ---@return finni.core.Extension?
+    ---@return finni.log.Line[]
+    function(chld)
+      local res = chld.lua_func(function() ---@diagnostic disable-line: redefined-local
+        return require("finni.core.ext").get("testext")
+      end)
+      local log = chld.filter_log({ ---@diagnostic disable-line: redefined-local
+        level = "warn",
+        pattern = ".*Missing extension `testext` in namespace `finni`.*",
+      })
+      ---@diagnostic disable-next-line: redundant-return-value
+      return res, log
+    end
+  )
   eq(res, nil)
   some(log)
 end
 
 T["get() does not crash when ext.config() errors"] = function()
-  local res, log = child.with({
-    init = {
-      init_ext,
-      [[
+  local res, log = child.with(
+    {
+      init = {
+        init_ext,
+        [[
 return {config = function() error('hi there') end}
       ]],
+      },
     },
-  }, function(chld)
-    local res = chld.lua_func(function() ---@diagnostic disable-line: redefined-local
-      return require("finni.core.ext").get("testext")
-    end)
-    local log = chld.filter_log({ ---@diagnostic disable-line: redefined-local
-      level = "error",
-      pattern = "Error configuring Finni extension.*testext.*hi there",
-    })
-    ---@diagnostic disable-next-line: redundant-return-value
-    return res, log
-  end)
+    ---@return finni.core.Extension?
+    ---@return finni.log.Line[]
+    function(chld)
+      local res = chld.lua_func(function() ---@diagnostic disable-line: redefined-local
+        return require("finni.core.ext").get("testext")
+      end)
+      local log = chld.filter_log({ ---@diagnostic disable-line: redefined-local
+        level = "error",
+        pattern = "Error configuring Finni extension.*testext.*hi there",
+      })
+      ---@diagnostic disable-next-line: redundant-return-value
+      return res, log
+    end
+  )
   eq(res, nil)
   some(log)
 end
@@ -198,8 +217,9 @@ return {%s = function(...) vim.g.hook_args = {...} end}
       ),
     },
   }, function(chld)
+    ---@diagnostic disable-next-line: missing-fields
     return chld.lua_func(function(stage, args) ---@diagnostic disable-line: redefined-local
-      require("finni.core.ext").call(stage, { testext = { testdata = true } }, unpack(args))
+      require("finni.core.ext").call(stage, { testext = { testdata = true } }, unpack(args)) ---@diagnostic disable-line: missing-fields, param-type-mismatch, missing-parameter
       return vim.g.hook_args
     end, stage, args)
   end)

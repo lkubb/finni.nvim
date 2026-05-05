@@ -87,7 +87,7 @@ local function ensure_raw_list(base, val)
     val = { val }
   end
   return vim
-    .iter(val)
+    .iter(val) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return base[v] or v
     end)
@@ -171,6 +171,7 @@ function Shada:add_hist(typ, contents, sep, timestamp)
     HIST_TYPE[typ] or typ,
     contents,
     typ == "search"
+        ---@diagnostic disable-next-line: need-check-nil, param-type-mismatch
         and assert(sep and sep:len() == 1 and sep, "Search requires single-char sep"):byte()
       or nil,
   }
@@ -280,7 +281,7 @@ function Shada:iter()
       return { self.entries[i - 3], self.entries[i - 2], self.entries[i - 1], self.entries[i] }
     end
   end
-  return vim.iter(it)
+  return vim.iter(it) ---@diagnostic disable-line: redundant-parameter
 end
 
 --- Iterate over contained entries of specific types, including history type selection.
@@ -325,7 +326,7 @@ end
 ---@return self shallow_copy_shada #
 ---   A shallow copy of this ShaDa with only the specified entry types
 function Shada:select(typ, hist_typ)
-  return Shada.new(vim.iter(self:filter(typ, hist_typ):totable()):flatten(1):totable())
+  return Shada.new(vim.iter(self:filter(typ, hist_typ):totable()):flatten(1):totable()) ---@diagnostic disable-line: redundant-parameter
 end
 
 --- Return information about the first header entry
@@ -399,7 +400,7 @@ function Shada:types()
     res[entry[1]] = true
   end
   return vim
-    .iter(pairs(res))
+    .iter(pairs(res)) ---@diagnostic disable-line: redundant-parameter
     :map(function(t)
       return ENTRY_TYPE_rev[t]
     end)
@@ -415,7 +416,7 @@ function Shada:hist_types()
     res[entry[4][1]] = true
   end
   return vim
-    .iter(pairs(res))
+    .iter(pairs(res)) ---@diagnostic disable-line: redundant-parameter
     :map(function(t)
       return HIST_TYPE_rev[t]
     end)

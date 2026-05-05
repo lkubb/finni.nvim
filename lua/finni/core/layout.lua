@@ -57,7 +57,7 @@ local function parse_jumplist(winid, tabnr, winnr, buflist)
     --- only after the session has been loaded, just fall through and remember whatever nvim gives us.
     return {
       vim
-        .iter(vim.w[winid].finni_jumplist[1])
+        .iter(vim.w[winid].finni_jumplist[1]) ---@diagnostic disable-line: redundant-parameter
         :map(function(jump)
           return {
             buflist:add(jump[1]),
@@ -147,11 +147,11 @@ end
 local function restore_loclists(winid, lists, pos, buflist)
   winid = winid or 0
   vim.fn.setloclist(winid, {}, "f") -- ensure lists are always cleared
-  vim.iter(lists):each(function(loclist)
+  vim.iter(lists):each(function(loclist) ---@diagnostic disable-line: redundant-parameter
     loclist.context = loclist.context or ""
     loclist.quicktextfunc = loclist.quicktextfunc or ""
     loclist.items = vim
-      .iter(loclist.items or {})
+      .iter(loclist.items or {}) ---@diagnostic disable-line: redundant-parameter
       :map(function(item)
         if item.filename then
           item.filename = buflist[item.filename] or item.filename
@@ -454,7 +454,7 @@ local function set_winlayout_data(layout, scale_factor, buflist)
       -- Other restoration steps could otherwise cause modifications of the restored data.
       vim.w[win.winid].finni_jumplist = {
         vim
-          .iter(win.jumps[1])
+          .iter(win.jumps[1]) ---@diagnostic disable-line: redundant-parameter
           :map(function(jump)
             return { buflist[jump[1]] or jump[1], jump[2], jump[3] }
           end)
@@ -578,15 +578,17 @@ local function set_winlayout_data(layout, scale_factor, buflist)
   -- Setting widths/heights twice, forwards and backwards, worked as a workaround in limited testing,
   -- but this should be the proper way and work in a sigle iteration.
   local fixdim_bak = {}
-  vim.iter(all_wins):each(function(win)
+  vim.iter(all_wins):each(function(win) ---@diagnostic disable-line: redundant-parameter
     fixdim_bak[win.winid] = { vim.wo[win.winid].winfixheight, vim.wo[win.winid].winfixwidth }
     vim.wo[win.winid].winfixheight, vim.wo[win.winid].winfixwidth = false, false
   end)
   -- Now that all windows have been created, we can restore frame order, options/dimensions and cursor pos.
-  vim.iter(all_wins):each(restore_final)
-  vim.iter(pairs(fixdim_bak)):each(function(winid, bak)
-    vim.wo[winid].winfixheight, vim.wo[winid].winfixwidth = bak[1], bak[2]
-  end)
+  vim.iter(all_wins):each(restore_final) ---@diagnostic disable-line: redundant-parameter
+  vim
+    .iter(pairs(fixdim_bak)) ---@diagnostic disable-line: redundant-parameter
+    :each(function(winid, bak)
+      vim.wo[winid].winfixheight, vim.wo[winid].winfixwidth = bak[1], bak[2]
+    end)
   -- Make it somewhat explicit that we're modifying dicts in-place
   return layout, active_winid
 end
@@ -616,7 +618,7 @@ function M.restore_jumplist(winid)
           -- The position that we are trying to restore needs to be filled by the last item
           -- in the jumplist since it's going to be pushed up top.
           ---@type WinInfo.JumplistEntry
-          local last_item = assert(jumps[#jumps])
+          local last_item = jumps[#jumps]
           table.insert(jumps, #jumps - backtrack, jumps[#jumps])
           jumps[#jumps] = nil
           correct_buf = vim.api.nvim_win_get_buf(winid)
@@ -649,10 +651,12 @@ function M.restore_jumplist(winid)
         end
         local shaja = util.shada.new()
         local now = os.time() - #jumps
-        vim.iter(ipairs(jumps)):each(function(i, jump)
-          ---@cast jump WinInfo.JumplistEntry
-          shaja:add_jump(jump[1], jump[2], jump[3], now + i)
-        end)
+        vim
+          .iter(ipairs(jumps)) ---@diagnostic disable-line: redundant-parameter
+          :each(function(i, jump)
+            ---@cast jump WinInfo.JumplistEntry
+            shaja:add_jump(jump[1], jump[2], jump[3], now + i)
+          end)
         vim.cmd.clearjumps()
         util.try_log(shaja.read, { "Failed to restore jumplist for win %s: %s", winid }, shaja)
         if backtrack > 0 then
@@ -703,7 +707,7 @@ end
 
 --- Force-close all tabs, windows and unload all buffers.
 function M.close_everything()
-  local is_floating_win = vim.api.nvim_win_get_config(0).relative ~= ""
+  local is_floating_win = vim.api.nvim_win_get_config(0).relative ~= "" ---@type boolean
   if is_floating_win then
     -- Go to the first window, which will not be floating
     vim.cmd.wincmd({ args = { "w" }, count = 1 })
@@ -738,7 +742,7 @@ function M.lock_view(targets, inner, ...)
     return not vim.list_contains(wins, win)
   end
   if targets.win then
-    wins = type(targets.win) == "table" and targets.win or { targets.win }
+    wins = type(targets.win) == "table" and targets.win or { targets.win } ---@type WinID[]
   end
   if targets.buf then
     wins = vim.list_extend(wins, vim.tbl_filter(flt, vim.fn.win_findbuf(targets.buf)))
@@ -748,6 +752,7 @@ function M.lock_view(targets, inner, ...)
   end
   -- Lock window views in outermost call to this function only
   local locked_here = {}
+  ---@diagnostic disable-next-line: redundant-parameter
   vim.iter(wins):each(function(win)
     if not vim.w[win]._finni_locked_view then
       vim.api.nvim_win_call(win, function()
@@ -757,6 +762,7 @@ function M.lock_view(targets, inner, ...)
     end
   end)
   return util.try_finally(inner, function()
+    ---@diagnostic disable-next-line: redundant-parameter
     vim.iter(locked_here):each(function(win)
       vim.api.nvim_win_call(win, function()
         vim.fn.winrestview(vim.w[win]._finni_locked_view)

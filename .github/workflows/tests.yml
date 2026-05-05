@@ -28,13 +28,15 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v2.1.0
         with:
           repo: EmmyLuaLs/emmylua-analyzer-rust
-          tag: 0.17.0
+          tag: 0.23.0
           asset-name: emmylua_check
           chmod: 0755
       - name: Install Neovim and dependencies
         run: |
           bash ./.github/workflows/install_nvim.sh
           make deps
+        env:
+          NVIM_TAG: v0.11.7
       - name: Run check
         run: |-
           export VIMRUNTIME=$(nvim -es '+put=$VIMRUNTIME|print|quit!')

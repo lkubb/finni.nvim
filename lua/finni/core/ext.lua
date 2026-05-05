@@ -112,10 +112,10 @@ function M.get(name)
     ns = "resession"
   end
   local compat_fallback
-  local has_ext, ext = pcall(require, ("%s.extensions.%s"):format(ns, name))
+  local has_ext, ext = pcall(require, ("%s.extensions.%s"):format(ns, name)) ---@type boolean,Extension|string ---@diagnostic disable-line: assign-type-mismatch
   if not has_ext and ns == "finni" then
     compat_fallback = true
-    has_ext, ext = pcall(require, ("resession.extensions.%s"):format(name))
+    has_ext, ext = pcall(require, ("resession.extensions.%s"):format(name)) ---@type boolean,Extension|string ---@diagnostic disable-line: assign-type-mismatch
   end
   if not has_ext then
     log.warn(
@@ -135,7 +135,7 @@ function M.get(name)
       name
     )
   end
-  ---@cast ext Extension
+  ---@cast ext -string
   if ext.config then
     local ok, err = pcall(ext.config, Config.extensions[name])
     if not ok then

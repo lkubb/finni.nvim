@@ -56,8 +56,8 @@ function FZFFinni:manual_picker()
       ["alt-d"] = self:wrap("delete_manual"),
     },
   })
-  fzf.fzf_exec(function(fzf_cb)
-    vim.iter(self:list_manual()):each(fzf_cb)
+  fzf.fzf_exec(function(fzf_cb) ---@diagnostic disable-line: undefined-field
+    vim.iter(self:list_manual()):each(fzf_cb) ---@diagnostic disable-line: redundant-parameter
     fzf_cb()
   end, opts)
 end
@@ -71,8 +71,8 @@ function FZFFinni:auto_all_picker()
       ["alt-d"] = self:wrap("delete_auto_all"),
     },
   })
-  fzf.fzf_exec(function(fzf_cb)
-    vim.iter(self:list_auto_all()):each(function(s)
+  fzf.fzf_exec(function(fzf_cb) ---@diagnostic disable-line: undefined-field
+    vim.iter(self:list_auto_all()):each(function(s) ---@diagnostic disable-line: redundant-parameter
       fzf_cb(s.project .. " | " .. s.session)
     end)
     fzf_cb()
@@ -98,9 +98,9 @@ function FZFFinni:auto_picker(project_name)
       ["--with-nth"] = "2..",
     },
   })
-  fzf.fzf_exec(function(fzf_cb)
+  fzf.fzf_exec(function(fzf_cb) ---@diagnostic disable-line: undefined-field
     vim
-      .iter(self:list_auto(project_name))
+      .iter(self:list_auto(project_name)) ---@diagnostic disable-line: redundant-parameter
       :map(function(v)
         return v.project .. "[\\|:" .. v.session
       end)
@@ -118,8 +118,9 @@ function FZFFinni:project_picker()
       ["alt-d"] = self:wrap("delete_project"),
     },
   })
-  fzf.fzf_exec(function(fzf_cb)
-    vim.iter(self:list_projects()):each(fzf_cb)
+  ---@diagnostic disable-next-line: undefined-field
+  fzf.fzf_exec(function(fzf_cb) ---@diagnostic disable-line: undefined-field
+    vim.iter(self:list_projects()):each(fzf_cb) ---@diagnostic disable-line: redundant-parameter
     fzf_cb()
   end, opts)
 end

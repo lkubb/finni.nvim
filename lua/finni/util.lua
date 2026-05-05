@@ -83,7 +83,8 @@ end
 --- plain Lua 5.1 xpcall does not have varargs, but LuaJIT does afaict).
 ---@generic T
 ---@param fun fun(...): T... Function to run in protected mode
----@return [boolean, T...] & {n: integer} packed_rets #
+---@return_overload [true, T...] & {n: integer}
+---@return_overload [false, string] & {n: integer}
 ---   Variadic returns of wrapped function packed via `vim.F.pack_len`
 local function xpc(fun, ...)
   local params = vim.F.pack_len(...)
@@ -149,7 +150,7 @@ end
 ---@overload fun(inner: (fun(...: Args...): Rets...), err_handler: (fun(err: string): Rets...), success_handler: nil, ...: Args...): Rets...
 ---@param inner fun(...: Args...): InnerRets... Function to run in protected mode
 ---@param err_handler fun(err: string): Rets... Function to call when `inner` errors
----@param success_handler fun(...: InnerRets...): Rets... #
+---@param success_handler? fun(...: InnerRets...): Rets... #
 ---   Function to call with `inner` returns when `inner` succeeds. Optional (use `try_catch` when omitting though)
 ---@param ... Args... Arguments for `inner`
 ---@return Rets... #

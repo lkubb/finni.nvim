@@ -3,7 +3,8 @@ local M = {}
 
 local Finni = require("finni.auto")
 
----@type {[keyof finni.auto]: {func: function, args?: {complete: string[]|function}[], kwargs?: table<string, string[]|function>}}
+---@alias finni.cli.MappedFuncs<T> { [P in keyof T]?: {func: T[P], args?: {complete?: string[]|function}, kwargs?: table<string, string[]|function>}; }
+---@type finni.cli.MappedFuncs<finni.auto>
 local funcs = {
   detach = {
     func = Finni.detach,
@@ -126,7 +127,7 @@ end
 ---@return {args: (string|number|boolean)[], kwargs: table<string, string|number|boolean>}
 local function parse_args(args, skip)
   return vim
-    .iter(args)
+    .iter(args) ---@diagnostic disable-line: redundant-parameter
     :skip(skip or 1) -- skip command/subcommand
     :fold({ args = {}, kwargs = {} }, function(acc, v)
       if v:find("=") then
@@ -152,14 +153,16 @@ function M.complete(_, line)
   if n == 1 then
     matches = vim.tbl_keys(funcs --[[@as table<string,any>]])
   elseif n > 1 then
-    local func = funcs[words[2]]
+    local func = funcs[words[2]] ---@diagnostic disable-line: undefined-field
     if not func or not (func.args or func.kwargs) then
       return matches
     end
     local parsed = parse_args(words, 2)
-    local required_arg_cnt = vim.iter(func.args or {}):fold(0, function(acc, v)
-      return acc + (v.required and 1 or 0)
-    end)
+    local required_arg_cnt = vim
+      .iter(func.args or {}) ---@diagnostic disable-line: redundant-parameter
+      :fold(0, function(acc, v)
+        return acc + (v.required and 1 or 0)
+      end)
     if #vim.tbl_keys(parsed.kwargs) == 0 and #parsed.args < #(func.args or {}) then
       local completion = ((func.args or {})[#parsed.args + 1] or {}).complete or {}
       if type(completion) == "function" then
@@ -204,7 +207,7 @@ function M.run(params)
   local func = funcs[params.fargs[1]]
   if not func then
     vim.ui.select(M.complete("", "Finni"), {}, function(item)
-      func = funcs[item]
+      func = funcs[item] ---@diagnostic disable-line: undefined-field
     end)
     if not func then
       return

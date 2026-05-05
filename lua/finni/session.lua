@@ -180,7 +180,7 @@ local function get_load_name(opts)
   end
   local select_opts = { kind = "resession_load", prompt = "Load session" }
   if Config.load.detail then
-    local session_data = {}
+    local session_data = {} ---@type table<string,Snapshot?>
     for _, session_name in ipairs(sessions) do
       local filename =
         util.path.get_session_file(session_name, opts and opts.dir or Config.session.dir)
@@ -192,7 +192,7 @@ local function get_load_name(opts)
       local formatted = session_name
       if data then
         if data.tab_scoped then
-          local tab_cwd = data.tabs[1].cwd
+          local tab_cwd = assert(assert(data.tabs[1]).cwd)
           formatted = formatted .. (" (tab) [%s]"):format(util.path.shorten_path(tab_cwd))
         else
           formatted = formatted .. (" [%s]"):format(util.path.shorten_path(data.global.cwd))
@@ -265,9 +265,9 @@ function M.load(name, opts)
   if name_clash then
     name_clash:detach("load", opts)
   end
-  session = session:restore(opts, snapshot)
+  local restored_session = session:restore(opts, snapshot)
   if opts.attach then
-    session = session:attach() -- luacheck: ignore
+    restored_session:attach()
   end
 end
 
@@ -324,9 +324,10 @@ function M.delete(name, opts)
   if not name then
     return
   end
-  local session = find_attached(name, { dir = opts.dir }, false)
-  if session then
-    session:detach("delete", opts)
+  local session ---@type Session<Session.Target>
+  local active_session = find_attached(name, { dir = opts.dir }, false)
+  if active_session then
+    session = active_session:detach("delete", opts)
   else
     local session_file, state_dir, context_dir =
       util.path.get_session_paths(name, opts.dir or Config.session.dir)

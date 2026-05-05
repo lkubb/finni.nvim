@@ -46,7 +46,7 @@ local function getjumps(winid)
   local jumplist = child.fn.getjumplist(winid or 0)
   local jmps, pos = jumplist[1], jumplist[2]
   return vim
-    .iter(jmps)
+    .iter(jmps) ---@diagnostic disable-line: redundant-parameter
     :map(function(v)
       return { vim.fn.fnamemodify(child.api.nvim_buf_get_name(v.bufnr), ":t"), v.lnum }
     end)
