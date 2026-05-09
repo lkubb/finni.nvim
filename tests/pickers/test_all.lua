@@ -24,8 +24,17 @@ getmetatable(T).opts.parametrize = vim
   end)
   :totable()
 
+local function get_picker(picker)
+  if picker == "telescope" then
+    if vim.fn.has("nvim-0.11") == 0 then
+      MiniTest.skip("Telescope requires nvim 0.11+")
+    end
+  end
+  return pickers[picker]
+end
+
 T["Manual picker works"] = function(picker)
-  picker = pickers[picker]
+  picker = get_picker(picker)
   local sess_data = fixtures.session("basic", true)
   picker.manual_picker()
   child.screen_contains("Finni Manual Sessions", "basic")
@@ -48,7 +57,7 @@ T["Manual picker works"] = function(picker)
 end
 
 T["Manual picker respects call overrides"] = function(picker)
-  picker = pickers[picker]
+  picker = get_picker(picker)
   local sess_data = fixtures.session("basic", true)
   local old_sess_dir = vim.fn.fnamemodify(sess_data, ":h")
   local new_sess_dir = util.path.join(vim.fn.fnamemodify(old_sess_dir, ":h"), "foobar")
@@ -67,7 +76,7 @@ T["Manual picker respects call overrides"] = function(picker)
 end
 
 T["Manual picker respects default overrides"] = function(picker)
-  picker = pickers[picker]
+  picker = get_picker(picker)
   local sess_data = fixtures.session("basic", true)
   local old_sess_dir = vim.fn.fnamemodify(sess_data, ":h")
   local new_sess_dir = util.path.join(vim.fn.fnamemodify(old_sess_dir, ":h"), "foobar")
@@ -87,7 +96,7 @@ T["Manual picker respects default overrides"] = function(picker)
 end
 
 T["All autosessions picker works"] = function(picker)
-  picker = pickers[picker]
+  picker = get_picker(picker)
   local sess_data = fixtures.autosession("basic")
   picker.auto_all_picker()
   child.screen_contains("Finni Autosessions", ".test/projects")
@@ -108,7 +117,7 @@ T["All autosessions picker works"] = function(picker)
 end
 
 T["Autosession in project picker works"] = function(picker)
-  picker = pickers[picker]
+  picker = get_picker(picker)
   local sess_data, project_dir, project_name = fixtures.autosession("basic")
   child.cmd("cd " .. vim.fn.fnameescape(project_dir))
   picker.auto_picker()
@@ -141,7 +150,7 @@ T["Autosession in project picker works"] = function(picker)
 end
 
 T["Project picker works"] = function(picker)
-  picker = pickers[picker]
+  picker = get_picker(picker)
   local sess_data, _, project_name = fixtures.autosession("basic")
   picker.project_picker()
   none(child.filter_log({ level = "error" }))
@@ -179,8 +188,8 @@ T["Pickers are registered"] = function(picker)
   elseif picker == "fzf_lua" then
     cmd = "FzfLua finni_auto_all"
   elseif picker == "telescope" then
-    if vim.fn.has("nvim-0.10.4") == 0 then
-      MiniTest.skip("Telescope requires nvim 0.10.4+")
+    if vim.fn.has("nvim-0.11") == 0 then
+      MiniTest.skip("Telescope requires nvim 0.11+")
     end
     cmd = "Telescope finni auto_all"
     needs_setup = false
