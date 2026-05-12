@@ -26,7 +26,6 @@
       "$VIMRUNTIME",
       "./deps/fzf-lua/lua",
       "./deps/gitsigns.nvim/lua",
-      "./deps/luv/library",
       "./deps/mini.nvim/lua",
       "./deps/neogit/lua",
       "./deps/oil.nvim/lua",

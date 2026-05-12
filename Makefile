@@ -74,7 +74,7 @@ _cleantest: .test
 	@mkdir -p ".test/env/run"
 
 ## deps: Install all library dependencies
-deps: deps/nvim-dap deps/fzf-lua deps/gitsigns.nvim deps/luv deps/mini.nvim deps/neogit deps/oil.nvim deps/plenary.nvim deps/snacks.nvim deps/telescope.nvim
+deps: deps/nvim-dap deps/fzf-lua deps/gitsigns.nvim deps/mini.nvim deps/neogit deps/oil.nvim deps/plenary.nvim deps/snacks.nvim deps/telescope.nvim
 
 deps/nvim-dap:
 	@mkdir -p deps
@@ -87,10 +87,6 @@ deps/fzf-lua:
 deps/gitsigns.nvim:
 	@mkdir -p deps
 	git clone --filter=blob:none https://github.com/lewis6991/gitsigns.nvim $@
-
-deps/luv:
-	@mkdir -p deps
-	git clone --filter=blob:none https://github.com/LuaCATS/luv $@
 
 deps/mini.nvim:
 	@mkdir -p deps
