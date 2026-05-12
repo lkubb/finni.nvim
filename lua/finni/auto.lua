@@ -879,7 +879,7 @@ function M.migrate_projects(opts)
   for name, typ in vim.fs.dir(opts.old_root) do
     if typ == "directory" then
       local project_dir = util.path.join(opts.old_root, name)
-      ---@param entry uv.fs_readdir.entry
+      ---@param entry { name: string, type: string  }
       ---@return [string, string, string]?
       local pred = function(entry, _)
         if entry.type ~= "file" then

@@ -179,7 +179,7 @@ end
 
 ---@generic T
 ---@param dir string Directory to list
----@param predicate? fun(entry: uv.fs_readdir.entry, dir: string, depth: integer): T?, boolean? #
+---@param predicate? fun(entry: { name: string, type: string }, dir: string, depth: integer): T?, boolean? #
 ---   Function to map list results to return value.
 ---   If unspecified, returns a list of file names.
 ---@param order_by? "filename"|"creation_time"|"modification_time"|fun(a: [string, T], b: [string, T]): boolean #

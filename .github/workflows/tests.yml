@@ -36,7 +36,7 @@ jobs:
           bash ./.github/workflows/install_nvim.sh
           make deps
         env:
-          NVIM_TAG: v0.11.7
+          NVIM_TAG: v0.12.2
       - name: Run check
         run: |-
           export VIMRUNTIME=$(nvim -es '+put=$VIMRUNTIME|print|quit!')
