@@ -2685,6 +2685,113 @@ A: One might assume the name of this plugin is a word play on the French
 * **cwd** `string`\
   The effective working directory that was determined when loading this auto-session
 
+<a id="finni.auto.AutosessionSpec"></a>
+### `finni.auto.AutosessionSpec` (Class)
+
+Specifies which project an autosession belongs to, its workspace root directory and name
+as well as configuration overrides specific to this autosession.
+
+**Fields:**
+
+* **project** [`finni.auto.AutosessionSpec.ProjectInfo`](<#finni.auto.AutosessionSpec.ProjectInfo>)\
+  Information about the project the session belongs to
+
+  Table fields:
+
+  * **data_dir**? `string`\
+    The path of the directory that is used to save autosession data related to this project.
+    If unspecified or empty, defaults to `<nvim data stdpath>/<autosession.dir config>/<escaped project name>`.
+    Relative paths are made absolute to `<nvim data stdpath>/<autosession.dir config>`.
+  * **name** `string`\
+    The name of the project
+  * **repo**? [`finni.auto.AutosessionSpec.GitInfo`](<#finni.auto.AutosessionSpec.GitInfo>)\
+    When the project is defined as a git repository, meta info
+* **root** `string`\
+  The top level directory for this session (workspace root).
+  Usually equals the project root, but can be different when git worktrees are used.
+* **name** `string`\
+  The name of the session
+* **config** [`finni.auto.LoadOpts`](<#finni.auto.LoadOpts>)\
+  Session-specific load/autosave options.
+
+  Table fields:
+
+  * **autosave_enabled**? `boolean`\
+    When this session is attached, automatically save it in intervals. Defaults to false.
+  * **autosave_interval**? `integer`\
+    Seconds between autosaves of this session, if enabled. Defaults to 60.
+  * **autosave_notify**? `boolean`\
+    Trigger a notification when autosaving this session. Defaults to true.
+  * **on_attach**? [`finni.core.Session.AttachHook`](<#finni.core.Session.AttachHook>)\
+    A function that's called when attaching to this session. No global default.
+  * **on_detach**? [`finni.core.Session.DetachHook`](<#finni.core.Session.DetachHook>)\
+    A function that's called when detaching from this session. No global default.
+  * **options**? `string[]`\
+    Save and restore these Neovim (global|buffer|tab|window) options.
+  * **buf_filter**? [`finni.BufFilter`](<#finni.BufFilter>)\
+    Function that decides whether a buffer should be included in a snapshot.
+  * **tab_buf_filter**? [`finni.TabBufFilter`](<#finni.TabBufFilter>)\
+    Function that decides whether a buffer should be included in a tab-scoped snapshot.
+    `buf_filter` is called first, this is to refine acceptable buffers only.
+  * **modified**? `(boolean|"auto")`\
+    Save/load modified buffers and their undo history.
+    If set to `auto` (default), does not save, but still restores modified buffers.
+  * **jumps**? `boolean`\
+    Save/load window-specific jumplists, including current position
+    (yes, for **all windows**, not just the active one like with ShaDa).
+    If set to `auto` (default), does not save, but still restores saved jumplists.
+  * **changelist**? `boolean`\
+    Save/load buffer-specific changelist (all buffers) and
+    changelist position (visible buffers only).
+
+    **Important**: Enabling this causes **buffer-local marks to be cleared** during restoration.
+    Consider tracking `local_marks` in addition to this.
+  * **global_marks**? `boolean`\
+    Save/load global marks (A-Z, not 0-9 currently).
+
+    _Only in global sessions._
+  * **local_marks**? `boolean`\
+    Save/load buffer-specific (local) marks.
+
+    **Note**: Enable this if you track the `changelist`.
+  * **search_history**? `(integer|boolean)`\
+    Maximum number of search history items to persist. Defaults to false.
+    If set to `true`, maps to the `'history'` option.
+
+    _Only in global sessions._
+  * **command_history**? `(integer|boolean)`\
+    Maximum number of command history items to persist. Defaults to false.
+    If set to `true`, maps to the `'history'` option.
+
+    _Only in global sessions._
+  * **input_history**? `(integer|boolean)`\
+    Maximum number of input history items to persist. Defaults to false.
+    If set to `true`, maps to the `'history'` option.
+
+    _Only in global sessions._
+  * **expr_history**? `boolean`\
+    Persist expression history. Defaults to false.
+    **Note**: Cannot set limit (currently), no direct support by neovim.
+
+    _Only in global sessions._
+  * **debug_history**? `boolean`\
+    Persist debug history. Defaults to false.
+    **Note**: Cannot set limit (currently), no direct support by neovim.
+
+    _Only in global sessions._
+  * **meta**? `table`\
+    External data remembered in association with this session. Useful to build on top of the core API.
+  * **attach**? `boolean`\
+    Attach to/stay attached to session after operation
+  * **save**? `boolean`\
+    Save/override autosave config for affected sessions before the operation
+  * **reset**? `(boolean|"auto")`\
+    When detaching a session in the process, unload associated resources/reset
+    everything during the operation when restoring a snapshot.
+    `auto` resets only for global sessions.
+  * **silence_errors**? `boolean`\
+    Don't error during this operation
+
 <a id="finni.auto.AutosessionSpec.GitInfo"></a>
 ### `finni.auto.AutosessionSpec.GitInfo` (Class)
 
@@ -2704,6 +2811,40 @@ Information about a Git repository that is associated with a project.
   The branch the worktree has checked out
 * **default_branch**? `string`\
   The name of the default branch
+
+<a id="finni.auto.AutosessionSpec.ProjectInfo"></a>
+### `finni.auto.AutosessionSpec.ProjectInfo` (Class)
+
+Specifies the project an autosession belongs to.
+Projects are identified by their name.
+Since projects are often associated with a Git repository and we need a place to
+pass around the queried information to avoid refetching it, it's also included in here.
+
+**Fields:**
+
+* **name** `string`\
+  The name of the project
+* **data_dir**? `string`\
+  The path of the directory that is used to save autosession data related to this project.
+  If unspecified or empty, defaults to `<nvim data stdpath>/<autosession.dir config>/<escaped project name>`.
+  Relative paths are made absolute to `<nvim data stdpath>/<autosession.dir config>`.
+* **repo**? [`finni.auto.AutosessionSpec.GitInfo`](<#finni.auto.AutosessionSpec.GitInfo>)\
+  When the project is defined as a git repository, meta info
+
+  Table fields:
+
+  * **commongitdir** `string`\
+    The common git dir, usually equal to gitdir, unless the worktree is not the default workdir
+    (e.g. in worktree checkuots of bare repos).
+    Then it's the actual repo root and gitdir is <git_common_dir>/worktrees/<worktree_name>
+  * **gitdir** `string`\
+    The repository (or worktree) data path
+  * **toplevel** `string`\
+    The path of the checked out worktree
+  * **branch**? `string`\
+    The branch the worktree has checked out
+  * **default_branch**? `string`\
+    The name of the default branch
 
 <a id="finni.auto.EnabledHook"></a>
 ### `finni.auto.EnabledHook` (Alias)
@@ -2827,7 +2968,7 @@ API options for `auto.load`
 <a id="finni.auto.LoadOptsHook"></a>
 ### `finni.auto.LoadOptsHook` (Alias)
 
-**Type:** `fun(meta: { cwd: string, project_name: string, session_name: string, workspace: string }) -> auto.LoadOpts?`
+**Type:** `fun(meta: { cwd: string, project_name: string, session_name: string, workspace: string }) -> `[`finni.auto.LoadOpts`](<#finni.auto.LoadOpts>)`?`
 
 Function that can return autosession-specific load option overrides.
 Receives output of WorkspaceHook, ProjectNameHook and SessionNameHook.
@@ -2848,7 +2989,7 @@ Receives output of WorkspaceHook, ProjectNameHook and SessionNameHook.
 <a id="finni.auto.ProjectNameHook"></a>
 ### `finni.auto.ProjectNameHook` (Alias)
 
-**Type:** `fun(workspace: string, git_info: auto.AutosessionSpec.GitInfo?) -> string`
+**Type:** `fun(workspace: string, git_info: `[`finni.auto.AutosessionSpec.GitInfo`](<#finni.auto.AutosessionSpec.GitInfo>)`?) -> string`
 
 Function that derives the project name from output of WorkspaceHook.
 
@@ -2901,7 +3042,7 @@ API options for `auto.save`
 <a id="finni.auto.SessionNameHook"></a>
 ### `finni.auto.SessionNameHook` (Alias)
 
-**Type:** `fun(meta: { cwd: string, git_info: auto.AutosessionSpec.GitInfo?, project_name: string, workspace: string }) -> string`
+**Type:** `fun(meta: { cwd: string, git_info: `[`finni.auto.AutosessionSpec.GitInfo`](<#finni.auto.AutosessionSpec.GitInfo>)`?, project_name: string, workspace: string }) -> string`
 
 Function that derives the session name from output of WorkspaceHook and ProjectNameHook.
 
@@ -2909,7 +3050,7 @@ Function that derives the session name from output of WorkspaceHook and ProjectN
 <a id="finni.auto.SpecHook"></a>
 ### `finni.auto.SpecHook` (Alias)
 
-**Type:** `fun(cwd: string) -> auto.AutosessionSpec?`
+**Type:** `fun(cwd: string) -> `[`finni.auto.AutosessionSpec`](<#finni.auto.AutosessionSpec>)`?`
 
 Function that derives autosession configuration from a path.
 The default implementation calls into all other autosession hooks
