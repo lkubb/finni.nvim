@@ -375,8 +375,7 @@ function IdleSession:save(opts)
   local save_opts = vim.tbl_extend(
     "keep",
     self:opts() --[[@as table]],
-    opts --[[@as table]]
-      or {},
+    opts --[[@as table]] or {},
     default_hook_opts --[[@as table]]
   )
   if

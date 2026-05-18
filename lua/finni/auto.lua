@@ -67,11 +67,9 @@ local function core_opts(opts, cur, defaults, forced)
   return vim.tbl_extend(
     "force",
     Config.autosession.config --[[@as table]],
-    defaults --[[@as table]]
-      or {},
+    defaults --[[@as table]] or {},
     cur.config --[[@as table]],
-    opts --[[@as table]]
-      or {},
+    opts --[[@as table]] or {},
     forced or {},
     { meta = { autosession = cur } }
   )
