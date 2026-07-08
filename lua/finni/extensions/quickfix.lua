@@ -43,6 +43,7 @@ end
 ---@param data [finni.core.Snapshot.QFList[]?, integer?]
 ---@param buflist string[]
 M.on_pre_load = function(data, _, buflist)
+  vim.fn.setqflist({}, "f") -- ensure lists are always cleared
   local lists, pos = data[1], data[2]
   if not lists then
     return
@@ -52,7 +53,6 @@ M.on_pre_load = function(data, _, buflist)
     -- migration
     lists, pos = { { items = data } }, 1
   end
-  vim.fn.setqflist({}, "f") -- ensure lists are always cleared
   vim.iter(lists):each(function(qflist) ---@diagnostic disable-line: redundant-parameter
     qflist.context = qflist.context or ""
     qflist.quicktextfunc = qflist.quicktextfunc or ""
