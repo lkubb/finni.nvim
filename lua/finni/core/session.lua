@@ -326,14 +326,6 @@ function IdleSession:attach()
   if self.tab_scoped then
     ---@cast self ActiveSession<Session.TabTarget>
     tab_sessions[self.tabid] = self.name
-    vim.api.nvim_create_autocmd("TabClosed", {
-      pattern = tostring(self.tabid),
-      callback = function()
-        self:detach("tab_closed", {})
-      end,
-      once = true,
-      group = self._aug,
-    })
   else
     current_session = self.name
   end
@@ -433,8 +425,7 @@ function ActiveSession:detach(reason, opts)
     end
   end
   -- TODO: Rework save + detach workflow for attached sessions
-  if (self.tab_scoped and reason == "tab_closed") or reason == "save" or reason == "delete" then
-    -- The tab is already gone. "TabClosedPre" does not exist in neovim (yet?)
+  if reason == "save" or reason == "delete" then
     opts.save = false
   elseif opts.save == nil then
     opts.save = self.autosave_enabled
@@ -451,7 +442,7 @@ function ActiveSession:detach(reason, opts)
     if self.tab_scoped then
       ---@cast self ActiveSession<Session.TabTarget>
       if reason ~= "tab_closed" then
-        vim.cmd.tabclose({ self.tabid, bang = true })
+        vim.cmd.tabclose({ vim.api.nvim_tabpage_get_number(self.tabid), bang = true })
       end
       -- TODO: Consider unloading associated buffers? (cave: should happen even on tab_closed)
     else
@@ -503,19 +494,26 @@ local function find_tabpage_for_session(name)
   end
 end
 
----@overload fun(by_name: true): table<string,TabID?>
----@overload fun(by_name: false?): table<TabID,string?>
----@param by_name? boolean Index returned mapping by session name instead of tab number
----@return table<string,TabID?>|table<TabID,string?> active_tab_sessions #
-local function list_active_tabpage_sessions(by_name)
-  -- First prune tab-scoped sessions for closed tabs
-  -- Note: Shouldn't usually be necessary because we're auto-detaching on TabClosed
+--- Prune tabpage sessions with invalid tab IDs.
+local function prune_tabpage_sessions()
   local invalid_tabpages = vim.tbl_filter(function(tabpage)
     return not vim.api.nvim_tabpage_is_valid(tabpage)
   end, vim.tbl_keys(tab_sessions))
   for _, tabpage in ipairs(invalid_tabpages) do
     sessions[tab_sessions[tabpage]]:forget()
   end
+end
+
+---@overload fun(by_name: true): table<string,TabID?>
+---@overload fun(by_name: false?): table<TabID,string?>
+---@param by_name? boolean Index returned mapping by session name instead of tab number
+---@return table<string,TabID?>|table<TabID,string?> active_tab_sessions #
+local function list_active_tabpage_sessions(by_name)
+  -- First prune tab-scoped sessions for closed tabs
+  -- Note: Shouldn't usually be necessary because
+  --   - on nvim <0.12, we're pruning on TabClosed
+  --   - on nvim >=0.12, we're autodetaching on TabClosedPre
+  prune_tabpage_sessions()
   if not by_name then
     return tab_sessions
   end
@@ -677,8 +675,9 @@ end
 ---    Tab number the session is associated with. Empty for current tab.
 ---@return ActiveSession<Session.TabTarget>?
 function M.get_tabid(tabid)
+  tabid = tabid or vim.api.nvim_get_current_tabpage()
   ---@type string?
-  local name = list_active_tabpage_sessions()[tabid or vim.api.nvim_get_current_tabpage()]
+  local name = list_active_tabpage_sessions()[tabid]
   ---@diagnostic disable-next-line: return-type-mismatch
   return name
       and assert(
@@ -808,6 +807,28 @@ function M.setup()
       M.detach(nil, "quit")
     end,
   })
+
+  if vim.fn.has("nvim-0.12") == 1 then
+    -- On nvim 0.12+, use TabClosedPre event to react to a tab closing,
+    -- which should allow us to save the session before exiting (Note: layout is locked).
+    vim.api.nvim_create_autocmd("TabClosedPre", {
+      group = autosave_group,
+      callback = function()
+        -- current tabpage is set to closed one, even if it was not active
+        local sess = tab_sessions[vim.api.nvim_get_current_tabpage()]
+        if sess then
+          assert(sessions[sess]):detach("tab_closed", {})
+        end
+      end,
+    })
+  else
+    -- On nvim <0.12, we can only react to a tab already being closed.
+    -- Best we can do is forget about the invalid session.
+    vim.api.nvim_create_autocmd("TabClosed", {
+      group = autosave_group,
+      callback = vim.schedule_wrap(prune_tabpage_sessions),
+    })
+  end
 end
 
 return M
