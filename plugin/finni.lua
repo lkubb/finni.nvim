@@ -36,7 +36,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 -- If folke/lazy.nvim is in use, we need to know when it
 -- finishes setup to be able to properly restore buffers.
 ---@cast vim.g.lazy_did_setup boolean?
-if vim.g.lazy_did_setup then
+if vim.g.lazy_did_setup and not vim.g.did_very_lazy then
   vim.api.nvim_create_autocmd("User", {
     pattern = "VeryLazy",
     callback = function()
