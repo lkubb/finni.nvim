@@ -148,8 +148,9 @@ local function restore_loclists(winid, lists, pos, buflist)
   winid = winid or 0
   vim.fn.setloclist(winid, {}, "f") -- ensure lists are always cleared
   vim.iter(lists):each(function(loclist) ---@diagnostic disable-line: redundant-parameter
+    ---@cast loclist Snapshot.QFList
     loclist.context = loclist.context or ""
-    loclist.quicktextfunc = loclist.quicktextfunc or ""
+    loclist.quickfixtextfunc = loclist.quickfixtextfunc or ""
     loclist.items = vim
       .iter(loclist.items or {}) ---@diagnostic disable-line: redundant-parameter
       :map(function(item)
@@ -169,7 +170,7 @@ local function restore_loclists(winid, lists, pos, buflist)
         })
       end)
       :totable()
-    vim.fn.setloclist(winid, {}, " ", loclist)
+    vim.fn.setloclist(winid, {}, " ", loclist --[[@as vim.fn.setqflist.what]])
   end)
   vim.api.nvim_win_call(winid, function()
     vim.cmd.lhistory({ count = pos, mods = { silent = true } })
