@@ -27,6 +27,7 @@
       "./deps/fzf-lua/lua",
       "./deps/gitsigns.nvim/lua",
       "./deps/mini.nvim/lua",
+      "./deps/nvim-dap/lua",
       "./deps/neogit/lua",
       "./deps/oil.nvim/lua",
       "./deps/plenary.nvim/lua",
