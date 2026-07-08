@@ -226,7 +226,7 @@ function M.try_log_else(inner, msg, success, ...)
       vim.notify(
         "[finni] " .. msg[1]:format(unpack(msg, 2)),
         vim.log.levels[
-          (msg.level --[[@as string]] or "error"):lower()
+          (msg.level --[[@as string]] or "error"):upper()
         ]
       )
     end
@@ -257,7 +257,7 @@ setmetatable(M, {
       self[k] = mod
       return mod
     end
-    error(("Call to undefined module 'finni.util.%s': %s"):format(k))
+    error(("Call to undefined module 'finni.util.%s'"):format(k))
   end,
 })
 

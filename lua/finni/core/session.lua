@@ -468,6 +468,10 @@ function ActiveSession:forget()
     vim.api.nvim_del_augroup_by_id(self._aug)
     self._aug = nil
   end
+  if self._timer then
+    self._timer:stop()
+    self._timer = nil
+  end
   sessions[self.name] = nil
   tab_sessions[self.tabid] = nil
   self.tabid = nil

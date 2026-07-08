@@ -42,7 +42,7 @@ local M = {}
 --- Definitions in here override the defaults in `session`.
 ---@field dir? string #
 --- Name of the directory to store autosession projects in.
---- Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+--- Interpreted relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.
 --- Defaults to `finni`.
 ---@field spec? auto.SpecHook #
 --- This function implements the logic that derives the autosession spec from a path,
@@ -109,7 +109,7 @@ local M = {}
 ---@class UserConfig.session: core.Session.InitOpts
 ---@field dir? string #
 --- Name of the directory to store regular sessions in.
---- Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+--- Interpreted relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.
 
 -- Until https://github.com/EmmyLuaLs/emmylua-analyzer-rust/issues/328 is resolved:
 -- NOTE: Keep in sync with above

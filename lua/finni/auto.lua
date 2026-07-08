@@ -313,6 +313,8 @@ function M.load(autosession, opts)
     end
     -- The session did not exist, need to save to initialize an empty one.
     -- First, change cwd to workspace root since we're saving/restoring cwd.
+    -- No need to suppress DirChangedPre/DirChanged handling below because
+    -- we already detached an active session and the new directory matches the session.
     vim.api.nvim_set_current_dir(autosession.root)
     session = Session.create_new(autosession.name, session_file, state_dir, context_dir, {
       autosave_enabled = load_opts.autosave_enabled,
@@ -570,7 +572,7 @@ end
 ---@param opts? finni.SideEffects.Notify & finni.SideEffects.SilenceErrors
 function M.delete(session, project, opts)
   opts = opts or {}
-  project = project or project_default()
+  project = project or project_default() -- crashes outside project - fix?
   -- Try to get the context, outcome can depend on the state of the directory.
   local ctx = M.explicit_ctx(session, project, { silence_errors = true })
   if ctx then

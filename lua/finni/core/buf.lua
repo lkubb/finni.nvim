@@ -44,7 +44,7 @@ local scheduled_restores = {}
 local function generate_uuid()
   if not seeded then
     ---@diagnostic disable-next-line: access-invisible
-    math.randomseed(os.time())
+    math.randomseed(os.time() + vim.uv.os_getpid() --[[@as integer]])
     seeded = true
   end
   local uuid = string.gsub(uuid_v4_template, "[xy]", function(c)

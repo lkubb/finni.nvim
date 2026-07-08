@@ -196,7 +196,7 @@ end
 ---@param width? integer Width of block type. Only when `typ` is `block`.
 ---@param timestamp? integer Timestamp of entry, defaults to now
 ---@return self self #
-function Shada:add_reg(contents, name, typ, unnamed, width, timestamp)
+function Shada:add_reg(name, contents, typ, unnamed, width, timestamp)
   typ = typ or "char"
   ---@type EntryData.Register
   local data = {
@@ -254,7 +254,7 @@ end
 function Shada:add_lmark(name, file, line, col, timestamp)
   ---@type EntryData.LocalMark
   local data = { n = name:lower():byte(), f = file, l = line, c = col }
-  return self:add("global_mark", data, timestamp)
+  return self:add("local_mark", data, timestamp)
 end
 
 --- Add a changelist entry.

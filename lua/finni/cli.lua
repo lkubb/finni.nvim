@@ -111,6 +111,8 @@ local funcs = {
   },
 }
 
+---@param val string
+---@return number|boolean|string?
 local function to_lua(val)
   if tonumber(val) then
     return tonumber(val)
@@ -120,6 +122,11 @@ local function to_lua(val)
     return false
   elseif val == "nil" then
     return nil
+  elseif
+    (vim.startswith(val, "'") and vim.endswith(val, "'"))
+    or (vim.startswith(val, '"') and vim.endswith(val, '"'))
+  then
+    return val:sub(2, -2)
   end
   return val
 end
@@ -131,7 +138,8 @@ local function parse_args(args, skip)
     :skip(skip or 1) -- skip command/subcommand
     :fold({ args = {}, kwargs = {} }, function(acc, v)
       if v:find("=") then
-        local param, val = unpack(vim.split(v, "=", { plain = true }))
+        local slices = vim.split(v, "=", { plain = true })
+        local param, val = slices[1], table.concat({ unpack(slices, 2) }, "=")
         acc.kwargs[param] = to_lua(val)
         return acc
       end
