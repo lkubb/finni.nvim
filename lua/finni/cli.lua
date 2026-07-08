@@ -207,11 +207,16 @@ function M.run(params)
   local func = funcs[params.fargs[1]]
   if not func then
     vim.ui.select(M.complete("", "Finni"), {}, function(item)
+      if not item then
+        return
+      end
       func = funcs[item] ---@diagnostic disable-line: undefined-field
+      if not func then
+        return
+      end
+      vim.api.nvim_feedkeys(":Finni " .. item, "n", false)
     end)
-    if not func then
-      return
-    end
+    return
   end
   local ret
   if func.args then

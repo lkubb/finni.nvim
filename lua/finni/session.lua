@@ -13,10 +13,13 @@ local M = {}
 ---@using finni.core
 
 --- Derive or ask user for session save file name
+---@generic Opts
 ---@param tab_scoped? boolean #
+---@param callback fun(name?: string, opts?: Opts)
+---@param opts? Opts
 --- Whether the saving session is a tab-scoped one. Defaults to false.
 ---@return string? session_name #
-local function get_save_name(tab_scoped)
+local function get_save_name(tab_scoped, callback, opts)
   local current
   if tab_scoped then
     current = Session.get_tabid()
@@ -26,11 +29,11 @@ local function get_save_name(tab_scoped)
   if current then
     return current.name
   end
-  local name
   vim.ui.input({ prompt = "Session name" }, function(selected)
-    name = selected
+    if selected then
+      callback(selected, opts)
+    end
   end)
-  return name
 end
 
 --- Check if a session with this configuration is already attached and return it if so
@@ -146,7 +149,7 @@ end
 --- If not provided, takes name of attached one or prompts user.
 ---@param opts? SaveOpts & PassthroughOpts
 function M.save(name, opts)
-  name = name or get_save_name(false)
+  name = name or get_save_name(false, M.save, opts)
   if not name then
     return
   end
@@ -159,7 +162,7 @@ end
 --- If not provided, takes name of attached one in current tabpage or prompts user.
 ---@param opts? SaveOpts & PassthroughOpts
 function M.save_tab(name, opts)
-  name = name or get_save_name(true)
+  name = name or get_save_name(true, M.save_tab, opts)
   if not name then
     return
   end
@@ -170,9 +173,11 @@ end
 M.save_all = Session.save_all
 
 --- Prompt user for name of session to load from session dir
----@param opts? DirParam
+---@generic Opts
+---@param callback fun(name?: string, opts?: Opts)
+---@param opts? LoadOpts & PassthroughOpts
 ---@return string?
-local function get_load_name(opts)
+local function get_load_name(callback, opts)
   local sessions = M.list({ dir = opts and opts.dir or nil })
   if vim.tbl_isempty(sessions) then
     vim.notify("No saved sessions", vim.log.levels.WARN)
@@ -201,11 +206,11 @@ local function get_load_name(opts)
       return formatted
     end
   end
-  local name
   vim.ui.select(sessions, select_opts, function(selected)
-    name = selected
+    if selected then
+      callback(selected, opts)
+    end
   end)
-  return name
 end
 
 --- Load a session from disk.
@@ -217,12 +222,12 @@ end
 --- If not provided, prompts user.
 ---@param opts? LoadOpts & PassthroughOpts #
 function M.load(name, opts)
-  ---@type LoadOpts & PassthroughOpts
-  opts = opts or {}
-  name = name or get_load_name({ dir = opts.dir })
+  name = name or get_load_name(M.load, opts)
   if not name then
     return
   end
+  ---@type LoadOpts & PassthroughOpts
+  opts = opts or {}
   local session_file, state_dir, context_dir =
     util.path.get_session_paths(name, opts.dir or Config.session.dir)
   local session, snapshot = Session.from_snapshot(name, session_file, state_dir, context_dir, opts)
