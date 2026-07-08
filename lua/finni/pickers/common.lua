@@ -34,6 +34,8 @@ function M.lazy_init(mod, init_func)
         end
         return v(...)
       end
+    else
+      mod[k] = v
     end
   end
   return mod

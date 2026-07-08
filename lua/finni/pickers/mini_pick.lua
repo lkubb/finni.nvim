@@ -199,6 +199,7 @@ function M.setup(opts, register)
   ---@diagnostic disable-next-line: undefined-global, unnecessary-if
   if MiniPick or register then -- luacheck: ignore
     init()
+    M._initialized = true
   end
 end
 

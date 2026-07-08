@@ -114,7 +114,7 @@ end
 
 --- Inspect or delete existing projects. Select project to manage/load its autosessions.
 function FZFFinni:project_picker()
-  local opts = self:resolve_opts("auto", {
+  local opts = self:resolve_opts("project", {
     prompt = "Finni Autosession Projects❯ ",
     actions = {
       default = self:wrap("select_project"),
@@ -140,6 +140,7 @@ function M.setup(opts, register)
   config = opts or {}
   if package.loaded["fzf-lua"] or register then
     init()
+    M._initialized = true
   end
 end
 
