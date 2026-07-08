@@ -14,6 +14,27 @@ M.is_mac = uv.os_uname().sysname == "Darwin"
 ---@type string
 M.sep = M.is_windows and "\\" or "/"
 
+--- Automatic uv error propagation and handle closing
+---@overload fun(handle?: integer|uv.luv_dir_t, opts?: {is_dir?: boolean, ignore: string[]}): fun<T>(...: T...): T...
+---@param handle? integer|uv.luv_dir_t
+---@param opts? {is_dir?: boolean, ignore: nil}
+---@return fun<T1, T>(arg: T1, ...: T...): std.NotNull<T1>, T...
+local function uverr(handle, opts)
+  opts = opts or {}
+  return function(...)
+    if
+      select(1, ...) == nil
+      and (not opts.ignore or not vim.tbl_contains(opts.ignore, select(3, ...)))
+    then
+      if handle then
+        (opts.is_dir and uv.fs_closedir or uv.fs_close)(handle) ---@diagnostic disable-line: param-type-mismatch, missing-parameter
+      end
+      error(select(2, ...), 2)
+    end
+    return ...
+  end
+end
+
 --- Normalize a path by making it absolute and ensuring a trailing /
 ---@param path string Path to normalize
 ---@return string normalized_path #
@@ -116,17 +137,21 @@ function M.get_stdpath_filename(stdpath, ...)
 end
 
 --- Try to read a file and return its contents on success.
---- Does not error, returns nil instead.
+--- Does not error if it does not exist, returns nil instead.
+--- Other errors are propagated.
 ---@param filepath string Path to read
 ---@return string? file_contents #
 function M.read_file(filepath)
   if not M.exists(filepath) then
     return nil
   end
-  local fd = assert(uv.fs_open(filepath, "r", 420)) -- 0644
-  local stat = assert(uv.fs_fstat(fd))
-  local content = uv.fs_read(fd, stat.size)
+  local fd = uverr()(uv.fs_open(filepath, "r", 420)) -- 0644
+  local stat = uverr(fd)(uv.fs_fstat(fd))
+  local content = uverr(fd)(uv.fs_read(fd, stat.size))
   uv.fs_close(fd)
+  if #content < stat.size then
+    error(("Failed reading '%s', output was less than expected size"):format(filepath))
+  end
   return content
 end
 
@@ -178,7 +203,7 @@ function M.mkdir(dirname, perms)
     if not M.exists(parent) then
       M.mkdir(parent)
     end
-    uv.fs_mkdir(dirname, perms)
+    uverr(nil, { ignore = { "EEXIST" } })(uv.fs_mkdir(dirname, perms))
   end
 end
 
@@ -205,10 +230,7 @@ function M.ls(dir, predicate, order_by)
 
   local function ls_inner(dir_inner, depth)
     visited[dir_inner] = true
-    ---@diagnostic disable-next-line: param-type-mismatch, param-type-not-match, unnecessary-assert
-    local fd = assert(uv.fs_opendir(dir_inner, nil, 256))
-    ---@diagnostic disable-next-line: cast-type-mismatch
-    ---@cast fd uv.luv_dir_t
+    local fd = uverr()(uv.fs_opendir(dir_inner, nil, 256))
     local entries = uv.fs_readdir(fd)
     while entries do
       for _, entry in ipairs(entries) do
@@ -273,9 +295,38 @@ end
 ---@param contents string Contents to write
 function M.write_file(filename, contents)
   M.mkdir(vim.fn.fnamemodify(filename, ":h"))
-  local fd = assert(uv.fs_open(filename, "w", 420)) -- 0644
-  uv.fs_write(fd, contents)
+  local fd = uverr()(uv.fs_open(filename, "w", 420)) -- 0644
+  local written = uverr(fd)(uv.fs_write(fd, contents))
   uv.fs_close(fd)
+  if written < #contents then
+    error(("Wrote less than expected, only %s of %s bytes"):format(written, #contents))
+  end
+end
+
+--- Write a file atomically (and synchronously).
+---@param filename string Path of the file to write
+---@param contents string Contents to write
+function M.write_atomic(filename, contents)
+  M.mkdir(vim.fn.fnamemodify(filename, ":h"))
+  local template = filename .. ".XXXXXX"
+  local fd, path = uverr()(uv.fs_mkstemp(template))
+  local written = uverr(fd)(uv.fs_write(fd, contents))
+  uv.fs_close(fd)
+  if written < #contents then
+    M.delete_file(path)
+    error(
+      ("Failure writing data to temp file at '%s'. Written: %s Expected: %s"):format(
+        path,
+        written,
+        #contents
+      )
+    )
+  end
+  local res, err = uv.fs_rename(path, filename)
+  if not res then
+    M.delete_file(path)
+    error(("Failure renaming temp file at '%s' to '%s': %s"):format(path, filename, err))
+  end
 end
 
 --- Ensure a file is absent
@@ -302,8 +353,8 @@ function M.rmdir(dirname, opts)
         local rm_fn
         if typ == "directory" then
           if opts.recursive then
-            for file, ftyp in vim.fs.dir(dirname) do
-              rm(M.join(dirname, file), ftyp)
+            for file, ftyp in vim.fs.dir(path) do
+              rm(M.join(path, file), ftyp)
             end
           else
             error(("%s is a directory"):format(path))
@@ -312,10 +363,7 @@ function M.rmdir(dirname, opts)
         else
           rm_fn = uv.fs_unlink
         end
-        local ret, err, errnm = rm_fn(path)
-        if ret == nil and errnm ~= "ENOENT" then
-          error(err)
-        end
+        uverr(nil, { ignore = { "ENOENT" } })(rm_fn(path))
       end
       rm(dirname, assert(stat).type)
     end
@@ -328,14 +376,10 @@ end
 ---@param target string Path to move file to.
 ---@param force boolean? Replace target file. Defaults to false.
 function M.mv(path, target, force)
-  if not force then
-    if M.exists(target) then
-      error(("Target '%s' exists, set force to override"):format(target))
-    end
-  else
-    M.delete_file(target)
+  if not force and M.exists(target) then
+    error(("Target '%s' exists, set force to override"):format(target))
   end
-  uv.fs_rename(path, target)
+  uverr()(uv.fs_rename(path, target))
 end
 
 --- Dump a lua variable to a JSON-encoded file (synchronously)
@@ -343,7 +387,7 @@ end
 ---@param obj any Data to dump
 function M.write_json_file(filename, obj)
   ---@diagnostic disable-next-line: param-type-mismatch
-  M.write_file(filename, vim.json.encode(obj))
+  M.write_atomic(filename, vim.json.encode(obj))
 end
 
 --- Get the path to the directory that stores session files.

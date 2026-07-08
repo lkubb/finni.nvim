@@ -837,7 +837,7 @@ function M.save_modified(state_dir, bufs)
         util.try_log(function()
           -- Backup the current buffer contents. Avoid vim.cmd.w because that can have side effects, even with keepalt/noautocmd.
           local lines = vim.api.nvim_buf_get_text(ctx.bufnr, 0, 0, -1, -1, {})
-          util.path.write_file(save_file, table.concat(lines, "\n") .. "\n")
+          util.path.write_atomic(save_file, table.concat(lines, "\n") .. "\n")
           -- TODO: Consider ways to optimize this/make it more robust:
           -- * Save hash of on-disk state
           -- * Save patch only
