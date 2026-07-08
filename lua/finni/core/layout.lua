@@ -695,8 +695,8 @@ function M.open_clean_tab()
   -- (one window, and one empty scratch buffer)
   if #vim.api.nvim_tabpage_list_wins(0) == 1 then
     if vim.api.nvim_buf_get_name(0) == "" then
-      local lines = vim.api.nvim_buf_get_lines(0, -1, 2, false)
-      if vim.tbl_isempty(lines) then
+      local lines = vim.api.nvim_buf_get_lines(0, 0, 2, false)
+      if #lines < 2 and lines[1] == "" then
         vim.bo.buflisted = false
         vim.bo.bufhidden = "wipe"
         return
