@@ -18,8 +18,10 @@ M.sep = M.is_windows and "\\" or "/"
 ---@param path string Path to normalize
 ---@return string normalized_path #
 function M.norm(path)
+  -- vim.fs.normalize does more than we want, I think
+  -- Unsure if we should normalize Windows paths to /.
   path = vim.fn.fnamemodify(path, ":p")
-  path = path:sub(-1) ~= "/" and path .. "/" or path
+  path = path:sub(-1) ~= M.sep and path .. M.sep or path
   return path
 end
 
@@ -57,6 +59,9 @@ end
 ---@param path string Path to check
 ---@return boolean is_subpath #
 function M.is_subpath(dir, path)
+  if dir:sub(-1) ~= M.sep then
+    dir = dir .. M.sep
+  end
   return string.sub(path, 0, string.len(dir)) == dir
 end
 
@@ -81,10 +86,10 @@ function M.shorten_path(path)
   if not home then
     return path
   end
-  local idx, chars = string.find(path, home)
+  local idx, chars = string.find(path, vim.pesc(M.norm(home)))
   if idx == 1 then
     ---@cast chars integer
-    return "~" .. string.sub(path, idx + chars)
+    return "~" .. M.sep .. string.sub(path, idx + chars)
   else
     return path
   end
