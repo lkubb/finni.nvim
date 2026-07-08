@@ -125,6 +125,24 @@ function M.try_finally(inner, always, ...)
   return unpack_res(res)
 end
 
+--- Execute an inner function in protected mode,
+--- call another function if it errors, only then re-raise possible errors
+--- while trying to preserve as much information as possible.
+---@generic Rets, Args
+---@param inner fun(...: Args...): Rets... Function to call (try)
+---@param on_err fun(err: string) Function to execute on error
+---@param ... Args... Arguments for `inner`
+---@return Rets... #
+---   Variadic returns of `inner`
+function M.try_err_finally(inner, on_err, ...)
+  local res = xpc(inner, ...)
+  if not res[1] then
+    on_err(res[2])
+    error(res[2], 2)
+  end
+  return unpack_res(res)
+end
+
 --- Execute an inner function in protected mode.
 --- On error, call another function with the error message.
 --- Return either the function's or the handler's return.

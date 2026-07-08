@@ -495,203 +495,209 @@ function M.restore(snapshot, opts, snapshot_ctx)
     end) ---@type boolean
 
   _is_loading = true
-
-  local layout = require("finni.core.layout")
-  if opts.reset then
-    layout.close_everything()
-  else
-    layout.open_clean_tab()
-  end
-  if (opts.modified or load_hist) and not snapshot_ctx.state_dir then
-    log.warn(
-      "Requested to restore modified buffers or history, but state_dir was not passed. Skipping restoration of buffer modifications/history."
-    )
-    opts.modified = false
-    opts.command_history = false
-    opts.search_history = false
-    opts.input_history = false
-    opts.expr_history = false
-    opts.debug_history = false
-  end
-
-  if not opts.modified and snapshot.modified then
-    log.debug("Not restoring modified buffers persisted in session, opts.modified is false")
-    local shallow_snapshot_copy = {}
-    for key, val in pairs(snapshot) do
-      if key ~= "modified" then
-        shallow_snapshot_copy[key] = val
-      end
-    end
-    ---@cast shallow_snapshot_copy Snapshot
-    snapshot = shallow_snapshot_copy
-  end
-
   -- Keep track of buffers that are not restored immediately so we know
   -- when snapshot restoration has finished completely.
   local scheduled_bufs = {} ---@type table<BufUUID, true?>
 
-  -- Don't trigger autocmds during snapshot restoration
-  -- Ignore all messages (including swapfile messages) as well
-  util.opts.with({ eventignore = "all", shortmess = "aAF" }, function()
-    if not snapshot.tab_scoped then
-      -- Set the options immediately
-      util.opts.restore_global(snapshot.global.options)
-      -- and restore histories
-      if load_hist then
-        log.debug("Clearing + restoring histories. Config: %s", opts)
-        rshada_hist(opts, snapshot_ctx)
-      end
-    end
-
-    Ext.call("on_pre_load", snapshot, snapshot_ctx, snapshot.buflist or {})
-
-    if not snapshot.tab_scoped and opts.global_marks ~= false and snapshot.global.marks then
-      log.debug("Restoring global marks: %s", snapshot.global.marks)
-      -- Let's set the global marks via ShaDa to avoid performance impact + interference because
-      -- there's only nvim_buf_set_mark, which requires loading the files into bufs and verifies the validity.
-      -- We can still clear all unwanted global marks after.
-      local gmark_shada = util.shada.new()
-      for mark, data in pairs(snapshot.global.marks) do
-        gmark_shada:add_gmark(mark, data[1], data[2], data[3])
-      end
-      util.try_log(gmark_shada.read, { "Failed to restore global marks: %s" }, gmark_shada)
-      util.try_log(function()
-        -- Clear all global marks that were not defined in the session
-        vim
-          .iter(vim.fn.getmarklist()) ---@diagnostic disable-line: redundant-parameter
-          :map(function(mark)
-            return mark.mark:sub(2, 2)
-          end)
-          :filter(function(name)
-            return not snapshot.global.marks[name]
-          end)
-          :each(vim.api.nvim_del_mark)
-      end, { "Failed to reset global marks: %s" })
-    end
-
-    local scale = {
-      vim.o.columns / snapshot.global.width,
-      (vim.o.lines - vim.o.cmdheight) / snapshot.global.height,
-    }
-
-    --- Called when a scheduled buffer has been restored.
-    ---@param buf Snapshot.BufData
-    local function bufrestored(buf)
-      scheduled_bufs[buf.uuid] = nil
-      log.trace("Restored deferred buf: %s\nRemaining:%s", buf.uuid, scheduled_bufs)
-      if vim.tbl_isempty(scheduled_bufs) then
-        util.opts.with(
-          { eventignore = "all", shortmess = "aAF" },
-          Ext.call,
-          "on_post_bufinit",
-          snapshot,
-          false
-        )
-        _is_loading = false
-        log.trace("Finished loading snapshot")
-      end
-    end
-
-    ---@type integer?
-    local last_bufnr
-    local timeout = 500
-    local scheduled_cnt = 0
-    for _, buf in ipairs(snapshot.buffers) do
-      if buf.in_win == false then
-        local restore_it = Buf.restore_soon(
-          buf,
-          snapshot,
-          snapshot_ctx.state_dir,
-          { timeout = timeout + scheduled_cnt * 30, callback = bufrestored }
-        )
-        if restore_it then
-          scheduled_bufs[buf.uuid] = true
-          scheduled_cnt = scheduled_cnt + 1
-        end
-      else
-        last_bufnr = Buf.restore(buf, snapshot, snapshot_ctx.state_dir)
-      end
-      -- TODO: Restore buffer preview cursor
-      -- Cannot restore m" here because unsaved restoration can increase
-      -- the number of lines/rows, on which the mark could rely. This is currently
-      -- worked around when saving buffers, but can be refactored since
-      -- restoration of unsaved changes is now included here.
-    end
-
-    Ext.call("on_post_bufinit", snapshot, true)
-
-    -- Ensure the cwd is set correctly for each loaded buffer
-    if not snapshot.tab_scoped then
-      -- FIXME: This should fire DirChanged[Pre] events
-      vim.api.nvim_set_current_dir(snapshot.global.cwd)
-    end
-
-    local curwin, curtab, curtab_wincnt ---@type WinID?, TabID?, integer?
-    local tabs = {}
-    for i, tab in ipairs(snapshot.tabs) do
-      if i > 1 then
-        vim.cmd.tabnew()
-        -- Tabnew creates a new empty buffer. Dispose of it when hidden.
-        vim.bo.buflisted = false
-        vim.bo.bufhidden = "wipe"
-      end
-      if tab.cwd then
-        vim.cmd.tcd({ args = { vim.fn.fnameescape(tab.cwd) } })
-      end
-      tabs[i] = vim.api.nvim_get_current_tabpage()
-      if tab.current then
-        -- Can't rely on tabpagenr later because that assumes 1) reset 2) global scope
-        curtab, curtab_wincnt = tabs[i], #(tab.wins or {}) -- or {} to support resession format, which sets `false`
-      end
-      util.opts.restore_tab(tab.options) -- Restore cmdheight before creating windows
-    end
-
-    -- Restore windows in tabs in a second step to avoid window height drift in the first tabpage.
-    -- If we restore window height before creating a second tab and `'showtabline'` is 1, with each
-    -- save/restore cycle, the lower windows in the first tabpage successively get smaller.
-    for i, tab in ipairs(snapshot.tabs) do
-      vim.api.nvim_set_current_tabpage(tabs[i])
-      curwin = layout.set_winlayout(tab.wins, scale, snapshot.buflist or {}) or curwin
-      -- Restore cmdheight again after creating windows because it can drift because of view restoration
-      -- (e.g. when more vertical space is available than when snapshot was saved)
-      util.opts.restore_tab(tab.options)
-      vim.t.finni_cmdheight_tracker = vim.o.cmdheight -- set this directly because we're ignoring events
-    end
-
-    -- curwin can be nil if we saved a session in a window with an unsupported buffer. If this was the only window in the active tabpage,
-    -- the user is confronted with an empty, unlisted buffer after loading the session. To avoid that situation,
-    -- we will switch to the last restored buffer. If the last restored tabpage has at least a single defined window,
-    -- we shouldn't do that though, it can result in unexpected behavior.
-    if curwin then
-      vim.api.nvim_set_current_win(curwin)
+  util.try_err_finally(function()
+    local layout = require("finni.core.layout")
+    if opts.reset then
+      layout.close_everything()
     else
-      if curtab then
-        vim.api.nvim_set_current_tabpage(curtab)
+      layout.open_clean_tab()
+    end
+    if (opts.modified or load_hist) and not snapshot_ctx.state_dir then
+      log.warn(
+        "Requested to restore modified buffers or history, but state_dir was not passed. Skipping restoration of buffer modifications/history."
+      )
+      opts.modified = false
+      opts.command_history = false
+      opts.search_history = false
+      opts.input_history = false
+      opts.expr_history = false
+      opts.debug_history = false
+    end
+
+    if not opts.modified and snapshot.modified then
+      log.debug("Not restoring modified buffers persisted in session, opts.modified is false")
+      local shallow_snapshot_copy = {}
+      for key, val in pairs(snapshot) do
+        if key ~= "modified" then
+          shallow_snapshot_copy[key] = val
+        end
       end
-      if (curtab_wincnt or #(snapshot.tabs[#snapshot.tabs] or {})) == 0 then
-        -- This means the active tabpage had a single, unsupported buffer.
-        -- Switch to the last loaded buffer in the snapshot, if any.
-        -- FIXME: Unsure if this is expected, it's mostly inherited and does not restore jumplist at all.
-        --        Consider keeping window layout intact and switching to alternative buffer/going back in
-        --        jumplist instead or handling this situation during save.
-        if not last_bufnr then
-          -- We might not have restored it yet since it wasn't in a window
-          for buf in
-            vim.iter(vim.tbl_values(snapshot.buffers)):rev() ---@diagnostic disable-line: redundant-parameter
-          do
-            if buf.loaded then
-              last_bufnr = Buf.added(buf.name, buf.uuid).bufnr
-              break
+      ---@cast shallow_snapshot_copy Snapshot
+      snapshot = shallow_snapshot_copy
+    end
+
+    -- Don't trigger autocmds during snapshot restoration
+    -- Ignore all messages (including swapfile messages) as well
+    util.opts.with({ eventignore = "all", shortmess = "aAF" }, function()
+      if not snapshot.tab_scoped then
+        -- Set the options immediately
+        util.opts.restore_global(snapshot.global.options)
+        -- and restore histories
+        if load_hist then
+          log.debug("Clearing + restoring histories. Config: %s", opts)
+          rshada_hist(opts, snapshot_ctx)
+        end
+      end
+
+      Ext.call("on_pre_load", snapshot, snapshot_ctx, snapshot.buflist or {})
+
+      if not snapshot.tab_scoped and opts.global_marks ~= false and snapshot.global.marks then
+        log.debug("Restoring global marks: %s", snapshot.global.marks)
+        -- Let's set the global marks via ShaDa to avoid performance impact + interference because
+        -- there's only nvim_buf_set_mark, which requires loading the files into bufs and verifies the validity.
+        -- We can still clear all unwanted global marks after.
+        local gmark_shada = util.shada.new()
+        for mark, data in pairs(snapshot.global.marks) do
+          gmark_shada:add_gmark(mark, data[1], data[2], data[3])
+        end
+        util.try_log(gmark_shada.read, { "Failed to restore global marks: %s" }, gmark_shada)
+        util.try_log(function()
+          -- Clear all global marks that were not defined in the session
+          vim
+            .iter(vim.fn.getmarklist()) ---@diagnostic disable-line: redundant-parameter
+            :map(function(mark)
+              return mark.mark:sub(2, 2)
+            end)
+            :filter(function(name)
+              return not snapshot.global.marks[name]
+            end)
+            :each(vim.api.nvim_del_mark)
+        end, { "Failed to reset global marks: %s" })
+      end
+
+      local scale = {
+        vim.o.columns / snapshot.global.width,
+        (vim.o.lines - vim.o.cmdheight) / snapshot.global.height,
+      }
+
+      --- Called when a scheduled buffer has been restored.
+      ---@param buf Snapshot.BufData
+      local function bufrestored(buf)
+        scheduled_bufs[buf.uuid] = nil
+        log.trace("Restored deferred buf: %s\nRemaining:%s", buf.uuid, scheduled_bufs)
+        if vim.tbl_isempty(scheduled_bufs) then
+          util.opts.with(
+            { eventignore = "all", shortmess = "aAF" },
+            Ext.call,
+            "on_post_bufinit",
+            snapshot,
+            false
+          )
+          _is_loading = false
+          log.trace("Finished loading snapshot")
+        end
+      end
+
+      ---@type integer?
+      local last_bufnr
+      local timeout = 500
+      local scheduled_cnt = 0
+      for _, buf in ipairs(snapshot.buffers) do
+        if buf.in_win == false then
+          local restore_it = Buf.restore_soon(
+            buf,
+            snapshot,
+            snapshot_ctx.state_dir,
+            { timeout = timeout + scheduled_cnt * 30, callback = bufrestored }
+          )
+          if restore_it then
+            scheduled_bufs[buf.uuid] = true
+            scheduled_cnt = scheduled_cnt + 1
+          end
+        else
+          last_bufnr = Buf.restore(buf, snapshot, snapshot_ctx.state_dir)
+        end
+        -- TODO: Restore buffer preview cursor
+        -- Cannot restore m" here because unsaved restoration can increase
+        -- the number of lines/rows, on which the mark could rely. This is currently
+        -- worked around when saving buffers, but can be refactored since
+        -- restoration of unsaved changes is now included here.
+      end
+
+      Ext.call("on_post_bufinit", snapshot, true)
+
+      -- Ensure the cwd is set correctly for each loaded buffer
+      if not snapshot.tab_scoped then
+        -- FIXME: This should fire DirChanged[Pre] events
+        vim.api.nvim_set_current_dir(snapshot.global.cwd)
+      end
+
+      local curwin, curtab, curtab_wincnt ---@type WinID?, TabID?, integer?
+      local tabs = {}
+      for i, tab in ipairs(snapshot.tabs) do
+        if i > 1 then
+          vim.cmd.tabnew()
+          -- Tabnew creates a new empty buffer. Dispose of it when hidden.
+          vim.bo.buflisted = false
+          vim.bo.bufhidden = "wipe"
+        end
+        if tab.cwd then
+          vim.cmd.tcd({ args = { vim.fn.fnameescape(tab.cwd) } })
+        end
+        tabs[i] = vim.api.nvim_get_current_tabpage()
+        if tab.current then
+          -- Can't rely on tabpagenr later because that assumes 1) reset 2) global scope
+          curtab, curtab_wincnt = tabs[i], #(tab.wins or {}) -- or {} to support resession format, which sets `false`
+        end
+        util.opts.restore_tab(tab.options) -- Restore cmdheight before creating windows
+      end
+
+      -- Restore windows in tabs in a second step to avoid window height drift in the first tabpage.
+      -- If we restore window height before creating a second tab and `'showtabline'` is 1, with each
+      -- save/restore cycle, the lower windows in the first tabpage successively get smaller.
+      for i, tab in ipairs(snapshot.tabs) do
+        vim.api.nvim_set_current_tabpage(tabs[i])
+        curwin = layout.set_winlayout(tab.wins, scale, snapshot.buflist or {}) or curwin
+        -- Restore cmdheight again after creating windows because it can drift because of view restoration
+        -- (e.g. when more vertical space is available than when snapshot was saved)
+        util.opts.restore_tab(tab.options)
+        vim.t.finni_cmdheight_tracker = vim.o.cmdheight -- set this directly because we're ignoring events
+      end
+
+      -- curwin can be nil if we saved a session in a window with an unsupported buffer. If this was the only window in the active tabpage,
+      -- the user is confronted with an empty, unlisted buffer after loading the session. To avoid that situation,
+      -- we will switch to the last restored buffer. If the last restored tabpage has at least a single defined window,
+      -- we shouldn't do that though, it can result in unexpected behavior.
+      if curwin then
+        vim.api.nvim_set_current_win(curwin)
+      else
+        if curtab then
+          vim.api.nvim_set_current_tabpage(curtab)
+        end
+        if (curtab_wincnt or #(snapshot.tabs[#snapshot.tabs] or {})) == 0 then
+          -- This means the active tabpage had a single, unsupported buffer.
+          -- Switch to the last loaded buffer in the snapshot, if any.
+          -- FIXME: Unsure if this is expected, it's mostly inherited and does not restore jumplist at all.
+          --        Consider keeping window layout intact and switching to alternative buffer/going back in
+          --        jumplist instead or handling this situation during save.
+          if not last_bufnr then
+            -- We might not have restored it yet since it wasn't in a window
+            for buf in
+              vim.iter(vim.tbl_values(snapshot.buffers)):rev() ---@diagnostic disable-line: redundant-parameter
+            do
+              if buf.loaded then
+                last_bufnr = Buf.added(buf.name, buf.uuid).bufnr
+                break
+              end
             end
           end
-        end
-        if last_bufnr then
-          vim.api.nvim_win_set_buf(0, last_bufnr)
+          if last_bufnr then
+            vim.api.nvim_win_set_buf(0, last_bufnr)
+          end
         end
       end
-    end
 
-    Ext.call("on_post_load", snapshot, snapshot_ctx)
+      Ext.call("on_post_load", snapshot, snapshot_ctx)
+    end)
+  end, function(_)
+    -- If the above logic errors, ensure we're not stuck at loading.
+    -- Consider resetting everything to how it was before?
+    -- Are there resources to reset, e.g. timers/autocmds for buffer restore?
+    _is_loading = false
   end)
 
   -- Trigger the BufEnter event manually for the current buffer.
