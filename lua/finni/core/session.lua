@@ -360,7 +360,10 @@ function ActiveSession:_setup_autosave()
       self.autosave_interval * 1000,
       self.autosave_interval * 1000,
       vim.schedule_wrap(function()
-        self:autosave()
+        -- Re-check we're still attached in case the timer fired right before detaching
+        if self:is_attached() then
+          self:autosave()
+        end
       end)
     )
   end

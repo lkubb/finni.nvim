@@ -470,6 +470,9 @@ function monitor(autosession)
   -- Integrate with GitSigns to watch current branch, but not immediately after start
   -- to avoid race conditions
   vim.defer_fn(function()
+    if not monitor_group then
+      return -- in case we were stopped before this deferred logic had a chance to run
+    end
     -- If we were not in sync when starting monitoring, try again. We're skipping
     -- the events GitSigns dispatches during startup, but it doesn't send any updates
     -- until something changes, which means if the first change is a branch change,
