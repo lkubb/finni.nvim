@@ -47,6 +47,24 @@ end
 --- If log file is above 16 MiB, renames it to keep a single backup.
 local function init()
   local logpath = get_log_file()
+  local logfile ---@type file?
+  local last_logfile_try ---@type integer?
+  local function open_log_handle()
+    if logfile then
+      return
+    end
+    local handle, err = io.open(logpath, "a+")
+    if handle then
+      logfile = handle
+    else
+      vim.notify(
+        f("Finni: Failed opening log file at '%(path)s': %(err)s", { path = logpath, err = err }),
+        vim.log.levels.ERROR,
+        Log.notify_opts
+      )
+      last_logfile_try = os.time()
+    end
+  end
   local exists, stat = util.path.exists(logpath)
   if exists then
     if assert(stat).size > 16 * 1024 * 1024 then
@@ -55,15 +73,7 @@ local function init()
   else
     util.path.mkdir(vim.fs.dirname(logpath))
   end
-  local logfile, err = io.open(logpath, "a+")
-  if not logfile then
-    vim.notify(
-      f("Finni: Failed opening log file at '%(path)s': %(err)s", { path = logpath, err = err }),
-      vim.log.levels.ERROR,
-      Log.notify_opts
-    )
-    return
-  end
+
   Log.set_handler(function(rend)
     ---@type LineFormat
     local vars = {
@@ -77,8 +87,13 @@ local function init()
       src_sep = rend.message:find("\n") and "\n\t" or "\t\t",
     }
     local line = f(Log.format, vars)
-    logfile:write(line .. "\n")
-    logfile:flush()
+    if not logfile and (not last_logfile_try or os.time() - last_logfile_try > 30) then
+      open_log_handle()
+    end
+    if logfile then
+      logfile:write(line .. "\n")
+      logfile:flush()
+    end
     ---@diagnostic disable-next-line: undefined-field
     if vim.log.levels[rend.level] >= Log.notify_level then
       local notify_func = function()
