@@ -135,7 +135,9 @@ local function wshada_hist(opts, snapshot_ctx, snapshot)
           -- These cannot be handled separately when writing.
           return
         end
-        return not should_skip and (char .. tostring(opts[conf] ~= true or vim.go.history)) or nil
+        return not should_skip
+            and (char .. tostring(opts[conf] == true and vim.go.history or opts[conf]))
+          or nil
       end
       return not should_skip and (char .. "0") or nil
     end)
