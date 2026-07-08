@@ -33,6 +33,9 @@ local TeleFinni = common.new_picker()
 
 function TeleFinni:get_selection(typ, _bufnr)
   local sel = action_state.get_selected_entry()
+  if not sel then
+    return
+  end
   if typ == "manual" then
     return sel[1]
   else

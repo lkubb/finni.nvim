@@ -14,6 +14,9 @@ end
 local SnacksFinni = common.new_picker()
 
 function SnacksFinni:get_selection(typ, _instance, item)
+  if not item then
+    return
+  end
   if typ == "project" then
     return item.project
   elseif typ == "manual" then

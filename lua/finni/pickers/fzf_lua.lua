@@ -20,11 +20,14 @@ end
 local FZFFinni = common.new_picker()
 
 function FZFFinni:get_selection(typ, item)
+  if not item or not item[1] then
+    return
+  end
   if typ == "auto_all" then
-    local splt = vim.split(assert(item[1]), " | ", { plain = true })
+    local splt = vim.split(item[1], " | ", { plain = true })
     return { project = assert(splt[1]), session = assert(splt[2]) }
   elseif typ == "auto" then
-    local splt = vim.split(assert(item[1]), "[\\|:", { plain = true })
+    local splt = vim.split(item[1], "[\\|:", { plain = true })
     return { project = assert(splt[1]), session = assert(splt[2]) }
   else
     return item[1]

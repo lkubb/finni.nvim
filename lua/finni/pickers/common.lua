@@ -93,12 +93,18 @@ end
 function Picker:load_manual(...)
   local sess = self:get_selection("manual", ...)
   self:close(...)
+  if not sess then
+    return
+  end
   require("finni.session").load(sess, { dir = self.dir })
 end
 
 --- Delete the selected manual session.
 function Picker:delete_manual(...)
   local sess = self:get_selection("manual", ...)
+  if not sess then
+    return
+  end
   require("finni.session").delete(sess, { dir = self.dir })
   self:refresh({ "manual" }, ...)
 end
@@ -146,13 +152,19 @@ end
 --- Open an autosession picker for the selected project.
 function Picker:select_project(...)
   local project = self:get_selection("project", ...)
+  if not project then
+    return
+  end
   return self:auto_picker(project)
 end
 
 --- Delete the selected project.
 function Picker:delete_project(...)
-  local proj = self:get_selection("project", ...)
-  require("finni.auto").reset_project({ name = proj })
+  local project = self:get_selection("project", ...)
+  if not project then
+    return
+  end
+  require("finni.auto").reset_project({ name = project })
   self:refresh({ "project" }, ...)
 end
 

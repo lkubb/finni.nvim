@@ -22,6 +22,9 @@ local MiniFinni = common.new_picker()
 
 function MiniFinni:get_selection(typ, accepted)
   local item = accepted or (pick.get_picker_matches() or {}).current
+  if not item then
+    return
+  end
   if typ == "project" then
     return item.project
   elseif typ == "manual" then
