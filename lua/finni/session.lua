@@ -226,8 +226,10 @@ function M.load(name, opts)
   if not name then
     return
   end
-  ---@type LoadOpts & PassthroughOpts
-  opts = opts or {}
+  opts = vim.tbl_extend("keep", opts --[[@as table]] or {}, {
+    reset = "auto",
+    attach = true,
+  })
   local session_file, state_dir, context_dir =
     util.path.get_session_paths(name, opts.dir or Config.session.dir)
   local session, snapshot = Session.from_snapshot(name, session_file, state_dir, context_dir, opts)
@@ -235,7 +237,7 @@ function M.load(name, opts)
     return
   end
   if opts.reset == "auto" then
-    opts.reset = not not session.tab_scoped
+    opts.reset = not session.tab_scoped
   end
   ---@cast opts LoadOptsParsed & PassthroughOpts
   -- If we're going to possibly switch sessions, detach _before_ loading a new session.
