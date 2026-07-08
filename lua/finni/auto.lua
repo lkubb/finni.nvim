@@ -620,7 +620,13 @@ function M.reset(opts)
       )
       return
     end
-    session = get_autosess(ctx)
+    local cur_sess, cur_ctx = current_autosession()
+    if cur_ctx and cur_ctx.name == ctx.name and cur_ctx.project.name == ctx.project.name then
+      -- Account for referenced autosession being active
+      session = cur_sess
+    else
+      session = get_autosess(ctx)
+    end
   else
     session = current_autosession()
   end
