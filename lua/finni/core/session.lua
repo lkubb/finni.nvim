@@ -340,7 +340,10 @@ function IdleSession:attach()
   ---@cast self ActiveSession<T>
   sessions[self.name] = self
   for _, hook in ipairs(self._on_attach) do
-    hook(self)
+    local res, msg = pcall(hook, self)
+    if not res then
+      log.error("Failed running attach hook: %s", msg)
+    end
   end
   self:_setup_autosave()
   return self
@@ -419,7 +422,12 @@ function ActiveSession:detach(reason, opts)
     self._timer = nil
   end
   for _, hook in ipairs(self._on_detach) do
-    opts = hook(self, reason, opts) or opts
+    local res, opts_or_msg = pcall(hook, self, reason, opts)
+    if res then
+      opts = opts_or_msg or opts
+    else
+      log.error("Failed running detach hook: %s", opts_or_msg)
+    end
   end
   -- TODO: Rework save + detach workflow for attached sessions
   if (self.tab_scoped and reason == "tab_closed") or reason == "save" or reason == "delete" then

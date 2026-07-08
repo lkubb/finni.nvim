@@ -161,7 +161,10 @@ end
 ---@param target_tabid? TabID
 function M.dispatch(name, session_name, opts, target_tabid)
   for _, cb in ipairs(hooks[name]) do
-    cb(session_name, opts, target_tabid)
+    local res, msg = pcall(cb, session_name, opts, target_tabid)
+    if not res then
+      log.error("Failed running %s hook: %s", name, msg)
+    end
   end
 end
 
