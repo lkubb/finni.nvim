@@ -453,6 +453,9 @@ require("finni.pickers.fzf_lua").project_picker()
 
 <a id="finni.pickers.fzf_lua"></a>
 ##### `finni.pickers.fzf_lua` (Module)
+
+**Fields:**
+
 <a id="finni.pickers.fzf_lua.setup()"></a>
 <details>
   <summary>
@@ -563,6 +566,9 @@ require("finni.pickers.mini_pick").project_picker()
 
 <a id="finni.pickers.mini_pick"></a>
 ##### `finni.pickers.mini_pick` (Module)
+
+**Fields:**
+
 <a id="finni.pickers.mini_pick.setup()"></a>
 <details>
   <summary>
@@ -988,7 +994,7 @@ of when an autosession is triggered, how it's handled and what is persisted in i
     _Only in global sessions._
 * **dir**? `string`\
   Name of the directory to store autosession projects in.
-  Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+  Interpreted relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.
   Defaults to `finni`.
 * **spec**? [`finni.auto.SpecHook`](<#finni.auto.SpecHook>)\
   This function implements the logic that derives the autosession spec from a path,
@@ -1178,7 +1184,7 @@ that don't override these defaults.
   _Only in global sessions._
 * **dir**? `string`\
   Name of the directory to store regular sessions in.
-  Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+  Interpreted relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.
 
 </details>
 
@@ -5590,7 +5596,7 @@ Configure autosession behavior and contents
     _Only in global sessions._
 * **dir**? `string`\
   Name of the directory to store autosession projects in.
-  Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+  Interpreted relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.
   Defaults to `finni`.
 * **spec**? [`finni.auto.SpecHook`](<#finni.auto.SpecHook>)\
   This function implements the logic that derives the autosession spec from a path,
@@ -5739,4 +5745,4 @@ Configure default session behavior and contents, affects both manual and autoses
   _Only in global sessions._
 * **dir**? `string`\
   Name of the directory to store regular sessions in.
-  Interpreted relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+  Interpreted relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.

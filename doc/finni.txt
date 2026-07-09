@@ -377,6 +377,7 @@ project_picker({opts})                   *finni.pickers.snacks.project_picker()*
 
                                                          *finni.pickers.fzf_lua*
 `finni.pickers.fzf_lua` (Module) ~
+    Fields: ~
 
 setup({opts}, {register})                        *finni.pickers.fzf_lua.setup()*
     Override picker defaults and register extensions.
@@ -429,6 +430,7 @@ project_picker({opts})                  *finni.pickers.fzf_lua.project_picker()*
 
                                                        *finni.pickers.mini_pick*
 `finni.pickers.mini_pick` (Module) ~
+    Fields: ~
 
 setup({opts}, {register})                      *finni.pickers.mini_pick.setup()*
     Override picker defaults and register extensions.
@@ -788,7 +790,7 @@ DEFAULTS
               _Only in global sessions._
       • {dir}? `string`
           Name of the directory to store autosession projects in. Interpreted
-          relative to `$XDG_STATE_HOME/$NVIM_APPNAME`. Defaults to `finni`.
+          relative to `$XDG_DATA_HOME/$NVIM_APPNAME`. Defaults to `finni`.
       • {spec}? |finni.auto.SpecHook|
           This function implements the logic that derives the autosession spec
           from a path, usually the current working directory. If it returns an
@@ -981,7 +983,7 @@ DEFAULTS
           _Only in global sessions._
       • {dir}? `string`
           Name of the directory to store regular sessions in. Interpreted
-          relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+          relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.
 }}}
 
 
@@ -5107,7 +5109,7 @@ PendingSession:delete({opts})               *finni.core.PendingSession:delete()*
               _Only in global sessions._
       • {dir}? `string`
           Name of the directory to store autosession projects in. Interpreted
-          relative to `$XDG_STATE_HOME/$NVIM_APPNAME`. Defaults to `finni`.
+          relative to `$XDG_DATA_HOME/$NVIM_APPNAME`. Defaults to `finni`.
       • {spec}? |finni.auto.SpecHook|
           This function implements the logic that derives the autosession spec
           from a path, usually the current working directory. If it returns an
@@ -5273,7 +5275,7 @@ PendingSession:delete({opts})               *finni.core.PendingSession:delete()*
           _Only in global sessions._
       • {dir}? `string`
           Name of the directory to store regular sessions in. Interpreted
-          relative to `$XDG_STATE_HOME/$NVIM_APPNAME`.
+          relative to `$XDG_DATA_HOME/$NVIM_APPNAME`.
 
 
 vim:tw=78:ts=8:sw=4:sts=4:et:fdm=marker:fmr={{{,}}}:fen:ft=help:norl:
